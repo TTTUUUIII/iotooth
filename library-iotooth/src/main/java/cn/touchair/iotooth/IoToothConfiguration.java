@@ -9,6 +9,8 @@ import androidx.annotation.NonNull;
 import java.util.UUID;
 
 public class IoToothConfiguration {
+
+    private String advertTitle;
     public final UUID advertUuid;
     public final UUID serviceUuid;
     public final UUID readonlyUuid;
@@ -26,5 +28,14 @@ public class IoToothConfiguration {
         this.serviceUuid = serviceUuid;
         this.readonlyUuid = readableUuid;
         this.writableUuid = writableUuid;
+    }
+
+    public void setAdvertTitle(String advertTitle) {
+        if (advertTitle.length() > 5) throw new RuntimeException("The advert title too long.");
+        this.advertTitle = advertTitle;
+    }
+
+    public String getAdvertTitle() {
+        return advertTitle;
     }
 }
