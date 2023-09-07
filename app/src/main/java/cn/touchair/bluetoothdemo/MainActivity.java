@@ -9,10 +9,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityMainBinding;
 import cn.touchair.iotooth.IoToothConfiguration;
@@ -81,17 +84,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 "2bc66748-4f33-4a6f-aeb0-14f3677c30fe",
                 "ccb653e6-8006-d4c5-f215-6048075fae0f"
         );
+        ioToothConfiguration.setAdvertTitle("Daisy");
         mIoToothPeripheral = new IoToothPeripheral(this, this);
         mIoToothPeripheral.startWithConfiguration(ioToothConfiguration);
     }
 
     public void checkPermissions() {
-        final String[] permissions = new String[] {
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN,
-                Manifest.permission.BLUETOOTH_ADVERTISE,
-                Manifest.permission.BLUETOOTH_CONNECT
-        };
+        final ArrayList<String> permissions = new ArrayList<>();
+        permissions.add(Manifest.permission.BLUETOOTH);
+        permissions.add(Manifest.permission.BLUETOOTH_ADMIN);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_ADVERTISE);
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
+            permissions.add(Manifest.permission.BLUETOOTH_SCAN);
+            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
         boolean needRequest = false;
         for (String permission : permissions) {
             if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
@@ -100,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
         if (needRequest) {
-            requestPermissions(permissions, REQ_CODE_ALL_PERMISSIONS);
+            requestPermissions(permissions.toArray(new String[0]), REQ_CODE_ALL_PERMISSIONS);
         } else {
             isAccessBluetoothPermission = true;
             initIoToothPeripheral();
