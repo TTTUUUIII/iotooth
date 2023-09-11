@@ -8,59 +8,65 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+import android.widget.Toast;
+
 import java.util.ArrayList;
+import java.util.List;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityMainBinding;
-import cn.touchair.iotooth.IoToothConfiguration;
-import cn.touchair.iotooth.IoToothEventListener;
-import cn.touchair.iotooth.IoToothPeripheral;
-import cn.touchair.iotooth.PeripheralEvent;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, IoToothEventListener {
-    private static final int REQ_CODE_ALL_PERMISSIONS = 0;
+public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
-    private boolean isAccessBluetoothPermission = false;
-    private IoToothPeripheral mIoToothPeripheral;
+    private final int REQ_CODE_PERMISSION = 0;
+    private final List<String> ALL_PERMISSIONS = new ArrayList<>();
 
+    {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_CONNECT);
+            ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_SCAN);
+        }
+        ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH);
+        ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_CONNECT);
+        ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_ADMIN);
+        ALL_PERMISSIONS.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        ALL_PERMISSIONS.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+    }
+    private boolean mIsPermissionGranted = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        binding.centralBtn.setOnClickListener(this::route);
+        binding.peripheralBtn.setOnClickListener(this::route);
         checkPermissions();
-        binding.stopAdvertingBtn.setOnClickListener(this::onClick);
-        binding.sendBtn.setOnClickListener(this::onClick);
     }
 
-    @Override
-    public void onClick(View v) {
+    public void route(View v) {
         int id = v.getId();
-        if (id == R.id.stop_adverting_btn) {
-            if (isAccessBluetoothPermission) {
-                mIoToothPeripheral.shutdown();
-            }
+        Intent intent = new Intent();
+        if (!mIsPermissionGranted) {
+            Toast.makeText(getApplicationContext(), "Permission denied!", Toast.LENGTH_SHORT).show();
+            return;
         }
-
-        if (id == R.id.send_btn) {
-            String sendMsg = binding.messageEdit.getText().toString().trim();
-            if (sendMsg != null && !sendMsg.isEmpty()) {
-                mIoToothPeripheral.send(sendMsg);
-            }
+        if (id == R.id.peripheral_btn) {
+            intent.setClass(getApplicationContext(), PeripheralActivity.class);
+        } else {
+            intent.setClass(getApplicationContext(), CentralActivity.class);
         }
+        startActivity(intent);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
-            case REQ_CODE_ALL_PERMISSIONS:
+            case REQ_CODE_PERMISSION:
                 boolean isOk = true;
                 for (int grantResult : grantResults) {
                     if (grantResult != PackageManager.PERMISSION_GRANTED) {
@@ -68,80 +74,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     }
                 }
-                if (isOk) {
-                    isAccessBluetoothPermission = true;
-                    initIoToothPeripheral();
-                }
+                mIsPermissionGranted = isOk;
                 break;
             default:
+                /*do nothing*/
         }
-    }
-
-    private void initIoToothPeripheral() {
-        IoToothConfiguration ioToothConfiguration = new IoToothConfiguration(
-                "e46ea779-33d2-4e4d-9081-cc1d81b48aeb",
-                "1b3f1e30-0f15-4f98-8d69-d2b97f4cedd6",
-                "2bc66748-4f33-4a6f-aeb0-14f3677c30fe",
-                "ccb653e6-8006-d4c5-f215-6048075fae0f"
-        );
-        ioToothConfiguration.setAdvertTitle("Daisy");
-        mIoToothPeripheral = new IoToothPeripheral(this, this);
-        mIoToothPeripheral.startWithConfiguration(ioToothConfiguration);
     }
 
     public void checkPermissions() {
-        final ArrayList<String> permissions = new ArrayList<>();
-        permissions.add(Manifest.permission.BLUETOOTH);
-        permissions.add(Manifest.permission.BLUETOOTH_ADMIN);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissions.add(Manifest.permission.BLUETOOTH_ADVERTISE);
-            permissions.add(Manifest.permission.BLUETOOTH_CONNECT);
-            permissions.add(Manifest.permission.BLUETOOTH_SCAN);
-            permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-        }
-        boolean needRequest = false;
-        for (String permission : permissions) {
+        List<String> needRequest = new ArrayList<>();
+        for (String permission : ALL_PERMISSIONS) {
             if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                needRequest = true;
-                break;
+                needRequest.add(permission);
             }
         }
-        if (needRequest) {
-            requestPermissions(permissions.toArray(new String[0]), REQ_CODE_ALL_PERMISSIONS);
+        if (!needRequest.isEmpty()) {
+            requestPermissions(needRequest.toArray(new String[0]), REQ_CODE_PERMISSION);
         } else {
-            isAccessBluetoothPermission = true;
-            initIoToothPeripheral();
+            mIsPermissionGranted = true;
         }
-    }
-
-    @Override
-    public void onEvent(PeripheralEvent event, Object obj) {
-        String newStateStr = "未定义";
-        switch (event) {
-            case ERROR:
-                newStateStr = "错误：" + obj;
-                break;
-            case CONNECTED:
-                newStateStr = "已连接";
-                break;
-            case CONNECTING:
-                newStateStr = "连接中";
-                break;
-            case DISCONNECTED:
-                newStateStr = "未连接";
-                break;
-            default:
-        }
-        binding.stateTextView.setText("状态：" + newStateStr);
-    }
-
-    @Override
-    public void onNext(int offset, byte[] data) {
-        appendMessage(new String(data, StandardCharsets.UTF_8));
-    }
-
-    private SimpleDateFormat mFormat = new SimpleDateFormat("MM-dd HH:mm:ss");
-    private void appendMessage(String newMessage) {
-        binding.messageTextView.append(String.format("\n%s\t\t%s", mFormat.format(System.currentTimeMillis()), newMessage));
     }
 }

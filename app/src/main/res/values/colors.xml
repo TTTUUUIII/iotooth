@@ -4,4 +4,5 @@
     <color name="white">#FFFFFFFF</color>
     <color name="primary">#FF279EFF</color>
     <color name="waring">#FFF4D160</color>
+    <color name="danger">#FFFF0000</color>
 </resources>

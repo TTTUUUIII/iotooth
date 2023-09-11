@@ -3,7 +3,7 @@
  * Create by <de.liu@touchair.cn>
  */
 
-package cn.touchair.iotooth;
+package cn.touchair.iotooth.periheral;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -27,21 +27,22 @@ import androidx.annotation.NonNull;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import cn.touchair.iotooth.configuration.PeripheralConfiguration;
+
 public class IoToothPeripheral extends AdvertiseCallback {
     private static final String TAG = IoToothPeripheral.class.getSimpleName();
     private static final int ERROR_CODE_BLUETOOTH_DISABLED = -1;
     private static final int ERROR_CODE_FAILED_TO_ADVERTISING = -2;
     private Context mContext;
     private BluetoothAdapter mAdapter;
-    private IoToothEventListener mListener;
-    private IoToothConfiguration mConfiguration;
+    private PeriheralStateListener mListener;
+    private PeripheralConfiguration mConfiguration;
     private BluetoothManager mBluetoothManager;
     private BluetoothGattServer mGattServer;
 
     private BluetoothDevice mConnectedDevice;
     private BluetoothGattCharacteristic mReadonlyCharacteristic;
     private BluetoothGattCharacteristic mWritableCharacteristic;
-
     private boolean mIsAdverting = false;
 
     private BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
@@ -51,16 +52,16 @@ public class IoToothPeripheral extends AdvertiseCallback {
             switch (newState) {
                 case BluetoothGattServer.STATE_CONNECTED:
                     mConnectedDevice = device;
-                    mListener.onEvent(PeripheralEvent.CONNECTED, null);
+                    mListener.onEvent(PeripheralState.CONNECTED, null);
                     stopAdvertising();
                     break;
                 case BluetoothGattServer.STATE_DISCONNECTED:
                     mConnectedDevice = null;
-                    mListener.onEvent(PeripheralEvent.DISCONNECTED, null);
+                    mListener.onEvent(PeripheralState.DISCONNECTED, null);
                     startAdverting();
                     break;
                 case BluetoothGattServer.STATE_CONNECTING:
-                    mListener.onEvent(PeripheralEvent.CONNECTING, null);
+                    mListener.onEvent(PeripheralState.CONNECTING, null);
                     break;
             }
         }
@@ -81,23 +82,23 @@ public class IoToothPeripheral extends AdvertiseCallback {
         @Override
         public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
-            Log.d(TAG, "write request");
-            mListener.onNext(offset, value);
+            mListener.onMessage(offset, value);
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
         }
     };
 
-    public  IoToothPeripheral(@NonNull Context ctx, @NonNull IoToothEventListener listener) {
+    public  IoToothPeripheral(@NonNull Context ctx, @NonNull PeriheralStateListener listener) {
         mContext = ctx;
         mBluetoothManager = (BluetoothManager) ctx.getSystemService(Context.BLUETOOTH_SERVICE);
         mListener = listener;
         mAdapter = mBluetoothManager.getAdapter();
+        mListener.onEvent(PeripheralState.INITIALIZED, null);
     }
 
     @SuppressLint("MissingPermission")
-    public void startWithConfiguration(IoToothConfiguration configuration) {
+    public void startWithConfiguration(PeripheralConfiguration configuration) {
         if (!mAdapter.isEnabled() && !mAdapter.enable()) {
-            mListener.onEvent(PeripheralEvent.ERROR, ERROR_CODE_BLUETOOTH_DISABLED);
+            Log.d(TAG, "Bluetooth not enable.");
             return;
         }
         mConfiguration = configuration;
@@ -121,12 +122,11 @@ public class IoToothPeripheral extends AdvertiseCallback {
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
                 .build();
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder()
-                .addServiceUuid(new ParcelUuid(mConfiguration.advertUuid))
+                .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
                 .setIncludeTxPowerLevel(true);
-        if (mConfiguration.getAdvertTitle() != null) {
+        if (mConfiguration != null) {
             dataBuilder.setIncludeDeviceName(true);
-            mAdapter.setName(mConfiguration.getAdvertTitle());
-            Log.d(TAG, mConfiguration.getAdvertTitle());
+            mAdapter.setName(mConfiguration.serviceLocalName);
         }
         BluetoothLeAdvertiser advertiser = mAdapter.getBluetoothLeAdvertiser();
         advertiser.startAdvertising(settings, dataBuilder.build(), this);
@@ -140,7 +140,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
             mGattServer.close();
             mGattServer = null;
         }
-        mListener.onEvent(PeripheralEvent.DISCONNECTED, null);
+        mListener.onEvent(PeripheralState.DISCONNECTED, null);
     }
 
     @SuppressLint("MissingPermission")
@@ -179,7 +179,6 @@ public class IoToothPeripheral extends AdvertiseCallback {
     @Override
     public void onStartFailure(int errorCode) {
         super.onStartFailure(errorCode);
-        mListener.onEvent(PeripheralEvent.ERROR, ERROR_CODE_FAILED_TO_ADVERTISING);
         Log.e(TAG, "Failed to start advertising, errorCode=" + errorCode);
     }
 }
