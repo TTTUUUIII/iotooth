@@ -5,7 +5,7 @@
 package cn.touchair.iotooth.periheral;
 
 public enum PeripheralState {
-    INITIALIZED,
+    ADVERTISING,
     CONNECTED, /*已连接*/
     DISCONNECTED, /*未连接*/
     CONNECTING, /*正在连接*/

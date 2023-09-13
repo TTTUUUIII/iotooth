@@ -92,7 +92,6 @@ public class IoToothPeripheral extends AdvertiseCallback {
         mBluetoothManager = (BluetoothManager) ctx.getSystemService(Context.BLUETOOTH_SERVICE);
         mListener = listener;
         mAdapter = mBluetoothManager.getAdapter();
-        mListener.onEvent(PeripheralState.INITIALIZED, null);
     }
 
     @SuppressLint("MissingPermission")
@@ -160,6 +159,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
     public void onStartSuccess(AdvertiseSettings settingsInEffect) {
         super.onStartSuccess(settingsInEffect);
         mIsAdverting = true;
+        mListener.onEvent(PeripheralState.ADVERTISING, null);
         if (Objects.isNull(mGattServer)) {
             mGattServer = mBluetoothManager.openGattServer(mContext, mGattServerCallback);
         }

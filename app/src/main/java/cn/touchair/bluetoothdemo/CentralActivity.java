@@ -42,7 +42,7 @@ public class CentralActivity extends AppCompatActivity implements View.OnClickLi
         );
         binding.connectBtn.setOnClickListener(this::onClick);
         binding.disconnectBtn.setOnClickListener(this::onClick);
-        binding.sendBtn.setOnClickListener(this::onClick);
+        binding.mainLayout.sendBtn.setOnClickListener(this::onClick);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class CentralActivity extends AppCompatActivity implements View.OnClickLi
 
     private void send() {
         if (mRemoteAddress != null) {
-            String sendMsg = binding.messageEditText.getText().toString();
+            String sendMsg = binding.mainLayout.messageEditText.getText().toString();
             if (sendMsg.isEmpty()) return;
             mCentral.send(mRemoteAddress, sendMsg);
         }
@@ -93,13 +93,13 @@ public class CentralActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void updateMessage() {
-        binding.messageShowTextView.setText(mMessageCache);
+        binding.mainLayout.messageShowTextView.setText(mMessageCache);
     }
     private void updateUI() {
-        binding.stateTextView.setText("状态：" + stateString());
+        binding.mainLayout.stateTextView.setText("状态：" + stateString());
         binding.connectBtn.setEnabled(mState != CentralState.CONNECTED);
         binding.disconnectBtn.setEnabled(mState == CentralState.CONNECTED);
-        binding.sendBtn.setEnabled(mState == CentralState.CONNECTED);
+        binding.mainLayout.sendBtn.setEnabled(mState == CentralState.CONNECTED);
     }
 
     private String stateString() {
