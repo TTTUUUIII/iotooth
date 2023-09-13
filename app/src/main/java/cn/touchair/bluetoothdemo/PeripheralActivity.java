@@ -14,7 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityPeripheralBinding;
-import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.periheral.IoToothPeripheral;
 import cn.touchair.iotooth.periheral.PeriheralStateListener;
@@ -60,6 +59,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
     @Override
     public void onEvent(PeripheralState event, Object obj) {
         mState = event;
+        runOnUiThread(this::updateUI);
     }
 
     @Override
