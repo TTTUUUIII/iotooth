@@ -7,6 +7,7 @@ package cn.touchair.bluetoothdemo;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
 
@@ -31,10 +32,11 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
     );
 
     private PeripheralState mState = PeripheralState.DISCONNECTED;
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mConfiguration.serviceLocalName = "followshot";
+        mConfiguration.serviceLocalName = "fs";
         binding = ActivityPeripheralBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         mPeripheral = new IoToothPeripheral(this, this);

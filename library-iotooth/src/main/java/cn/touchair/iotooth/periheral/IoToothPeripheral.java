@@ -113,7 +113,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
     }
 
     @SuppressLint("MissingPermission")
-    public void startAdverting() {
+    private void startAdverting() {
         if (mIsAdverting) return;
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
                 .setConnectable(true)

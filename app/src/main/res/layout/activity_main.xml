@@ -8,13 +8,15 @@
     android:gravity="center_vertical"
     android:orientation="vertical"
     tools:context=".MainActivity">
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/central_btn"
+        app:cornerRadius="5dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="中心模式" />
     <Button
         android:id="@+id/peripheral_btn"
+        app:cornerRadius="5dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="外设模式" />

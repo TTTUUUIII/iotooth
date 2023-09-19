@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
             ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_CONNECT);
             ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_SCAN);
         }
+        ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_ADVERTISE);
         ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH);
         ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_CONNECT);
         ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_ADMIN);
