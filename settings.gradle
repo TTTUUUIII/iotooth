@@ -13,6 +13,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BluetoothDemo"
+rootProject.name = "iotooth"
 include ':app'
 include ':library-iotooth'
