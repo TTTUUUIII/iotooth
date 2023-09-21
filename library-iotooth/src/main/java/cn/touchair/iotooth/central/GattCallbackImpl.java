@@ -16,16 +16,18 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import cn.touchair.iotooth.GlobalConfig;
+import cn.touchair.iotooth.Logger;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
+import cn.touchair.iotooth.configuration.ToothConfiguration;
 
 public class GattCallbackImpl extends BluetoothGattCallback {
 
     private static final String TAG = GattCallbackImpl.class.getSimpleName();
-    private static final String NOTIFY_DESCRIPTOR_UUID = "00002902-0000-1000-8000-00805f9b34fb";
     private CentralConfiguration mConfiguration;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic mReadonlyCharacteristic;
@@ -33,6 +35,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     private CentralState mState = CentralState.OPENED_GATT;
     private CentralStateListener mListener;
     private boolean isConnected = false;
+    private Logger mLogger = Logger.getLogger(GattCallbackImpl.class);
     public GattCallbackImpl(@NonNull CentralConfiguration configuration, @NonNull CentralStateListener listener) {
         mConfiguration = configuration;
         mListener = listener;
@@ -66,12 +69,11 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         super.onServicesDiscovered(gatt, status);
         if (GlobalConfig.DEBUG) {
-            List<BluetoothGattService> services = gatt.getServices();
-            Log.d(TAG, "SERVICE_LIST>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
-            for (BluetoothGattService service : services) {
-                Log.d(TAG, "*\t" + service.getUuid().toString());
-            }
-            Log.d(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><");
+            Set<UUID> services = gatt.getServices()
+                            .stream()
+                            .map(service -> service.getUuid())
+                            .collect(Collectors.toSet());
+            mLogger.debug("SERVICE_LIST", services);
         }
         BluetoothGattService service = gatt.getService(mConfiguration.serviceUuid);
         if (service == null) {
@@ -82,7 +84,15 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         mReadonlyCharacteristic = service.getCharacteristic(mConfiguration.readonlyUuid);
         mBluetoothGatt.setCharacteristicNotification(mReadonlyCharacteristic, true);
         if (mReadonlyCharacteristic != null) {
-            BluetoothGattDescriptor descriptor = mReadonlyCharacteristic.getDescriptor(UUID.fromString(NOTIFY_DESCRIPTOR_UUID));
+            if (GlobalConfig.DEBUG) {
+                Set<UUID> descriptors = mReadonlyCharacteristic
+                        .getDescriptors()
+                        .stream()
+                        .map(descriptor -> descriptor.getUuid())
+                        .collect(Collectors.toSet());
+                mLogger.debug("R_DESCRIPTOR_LIST", descriptors);
+            }
+            BluetoothGattDescriptor descriptor = mReadonlyCharacteristic.getDescriptor(ToothConfiguration.CLIENT_CHARACTERISTIC_CONFIG);
             if (descriptor != null) {
                 descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                 gatt.writeDescriptor(descriptor);
@@ -124,8 +134,15 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     }
 
     @Override
+    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        super.onCharacteristicChanged(gatt, characteristic);
+        mListener.onMessage(0, characteristic.getValue());
+    }
+
+    @Override
     public void onDescriptorRead(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattDescriptor descriptor, int status, @NonNull byte[] value) {
         super.onDescriptorRead(gatt, descriptor, status, value);
+        Log.d(TAG, "onDescriptorRead");
     }
 
     @Override
@@ -138,9 +155,11 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         }
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public void onServiceChanged(@NonNull BluetoothGatt gatt) {
-        super.onServiceChanged(gatt);
+        gatt.disconnect();
+        mListener.onEvent(CentralState.DISCONNECTED, gatt.getDevice().getAddress());
         Log.i(TAG, "onServiceChanged");
     }
 
@@ -176,9 +195,5 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     private void handleState(@NonNull CentralState newState, @Nullable Object obj) {
         mState = newState;
         mListener.onEvent(mState, obj);
-    }
-
-    public interface GattStateListener {
-        void onEvent(CentralState state, @Nullable Object obj);
     }
 }

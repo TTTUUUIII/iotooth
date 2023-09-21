@@ -15,6 +15,7 @@
 
         <TextView
             android:id="@+id/state_text_view"
+            android:padding="5dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="状态：未连接" />
@@ -29,6 +30,7 @@
         app:layout_constraintTop_toBottomOf="@+id/linearLayout2">
 
         <ScrollView
+            android:id="@+id/scroll_view"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_marginBottom="10dp"
@@ -49,13 +51,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:hint="请输入消息"
-            android:text="Hi, David!"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/send_btn"
             app:layout_constraintStart_toStartOf="parent" />
 
         <Button
             android:id="@+id/send_btn"
+            app:cornerRadius="5dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:enabled="false"

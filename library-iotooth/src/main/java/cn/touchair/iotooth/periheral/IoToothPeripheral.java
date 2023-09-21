@@ -10,10 +10,12 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -25,14 +27,15 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
+import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
+import cn.touchair.iotooth.configuration.ToothConfiguration;
 
 public class IoToothPeripheral extends AdvertiseCallback {
     private static final String TAG = IoToothPeripheral.class.getSimpleName();
-    private static final int ERROR_CODE_BLUETOOTH_DISABLED = -1;
-    private static final int ERROR_CODE_FAILED_TO_ADVERTISING = -2;
     private Context mContext;
     private BluetoothAdapter mAdapter;
     private PeriheralStateListener mListener;
@@ -52,7 +55,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
             switch (newState) {
                 case BluetoothGattServer.STATE_CONNECTED:
                     mConnectedDevice = device;
-                    mListener.onEvent(PeripheralState.CONNECTED, null);
+                    mListener.onEvent(PeripheralState.CONNECTED, device.getAddress());
                     stopAdvertising();
                     break;
                 case BluetoothGattServer.STATE_DISCONNECTED:
@@ -69,43 +72,103 @@ public class IoToothPeripheral extends AdvertiseCallback {
         @Override
         public void onServiceAdded(int status, BluetoothGattService service) {
             super.onServiceAdded(status, service);
-            Log.d(TAG, "onServiceAdded called");
+            if (GlobalConfig.DEBUG) {
+                Log.d(TAG, "onServiceAdded called");
+            }
         }
 
+        @SuppressLint("MissingPermission")
         @Override
         public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset, BluetoothGattCharacteristic characteristic) {
             super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
-            Log.d(TAG, "onCharacteristicReadRequest called");
+            if (GlobalConfig.DEBUG) {
+                Log.d(TAG, "onCharacteristicReadRequest called");
+            }
+            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
         }
 
         @SuppressLint("MissingPermission")
         @Override
         public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
+            if (GlobalConfig.DEBUG) {
+                Log.d(TAG, "onCharacteristicWriteRequest: " + new String(value));
+            }
             mListener.onMessage(offset, value);
-            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+            if (responseNeeded) {
+                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onDescriptorWriteRequest(BluetoothDevice device, int requestId, BluetoothGattDescriptor descriptor, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
+            super.onDescriptorWriteRequest(device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
+            if (GlobalConfig.DEBUG) {
+                Log.d(TAG, "onDescriptorWriteRequest: " + value);
+            }
+            if (Arrays.equals(value, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
+                descriptor.setValue(value);
+            }
+            if (responseNeeded) {
+                mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
+            }
+        }
+
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset, BluetoothGattDescriptor descriptor) {
+            super.onDescriptorReadRequest(device, requestId, offset, descriptor);
+            if (GlobalConfig.DEBUG) {
+                Log.d(TAG, "onDescriptorReadRequest");
+            }
+            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, descriptor.getValue());
+        }
+
+        @SuppressLint("MissingPermission")
+        @Override
+        public void onExecuteWrite(BluetoothDevice device, int requestId, boolean execute) {
+            super.onExecuteWrite(device, requestId, execute);
+            if (GlobalConfig.DEBUG) {
+                Log.d(TAG, "onExecuteWrite");
+            }
+            mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null);
         }
     };
 
-    public  IoToothPeripheral(@NonNull Context ctx, @NonNull PeriheralStateListener listener) {
+    @SuppressLint("MissingPermission")
+    public  IoToothPeripheral(@NonNull Context ctx, @NonNull PeriheralStateListener listener, @NonNull PeripheralConfiguration configuration) {
+        Objects.requireNonNull(ctx);
+        Objects.requireNonNull(listener);
+        Objects.requireNonNull(configuration);
         mContext = ctx;
         mBluetoothManager = (BluetoothManager) ctx.getSystemService(Context.BLUETOOTH_SERVICE);
         mListener = listener;
+        mConfiguration = configuration;
         mAdapter = mBluetoothManager.getAdapter();
+        if (!mAdapter.isEnabled() && !mAdapter.enable()) {
+            Log.d(TAG, "Bluetooth not enable.");
+        }
     }
 
     @SuppressLint("MissingPermission")
-    public void startWithConfiguration(PeripheralConfiguration configuration) {
-        if (!mAdapter.isEnabled() && !mAdapter.enable()) {
-            Log.d(TAG, "Bluetooth not enable.");
-            return;
-        }
-        mConfiguration = configuration;
+    public void enable() {
         startAdverting();
     }
 
     @SuppressLint("MissingPermission")
-    public void stopAdvertising() {
+    public void disable() {
+        stopAdvertising();
+        if (Objects.nonNull(mGattServer)) {
+            mGattServer.clearServices();
+            mGattServer.close();
+            mGattServer = null;
+        }
+        mListener.onEvent(PeripheralState.DISCONNECTED, null);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void stopAdvertising() {
         if (!mIsAdverting) return;
         mIsAdverting = false;
         BluetoothLeAdvertiser advertiser = mAdapter.getBluetoothLeAdvertiser();
@@ -132,21 +195,11 @@ public class IoToothPeripheral extends AdvertiseCallback {
     }
 
     @SuppressLint("MissingPermission")
-    public void shutdown() {
-        stopAdvertising();
-        if (Objects.nonNull(mGattServer)) {
-            mGattServer.clearServices();
-            mGattServer.close();
-            mGattServer = null;
-        }
-        mListener.onEvent(PeripheralState.DISCONNECTED, null);
-    }
-
-    @SuppressLint("MissingPermission")
     public void send(byte[] bytes) {
         if (Objects.nonNull(mGattServer) && Objects.nonNull(mReadonlyCharacteristic)) {
             mReadonlyCharacteristic.setValue(bytes);
-            mGattServer.notifyCharacteristicChanged(mConnectedDevice, mReadonlyCharacteristic, true);
+            boolean indicate = (mReadonlyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == BluetoothGattCharacteristic.PROPERTY_INDICATE;
+            mGattServer.notifyCharacteristicChanged(mConnectedDevice, mReadonlyCharacteristic, indicate);
         }
     }
 
@@ -159,7 +212,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
     public void onStartSuccess(AdvertiseSettings settingsInEffect) {
         super.onStartSuccess(settingsInEffect);
         mIsAdverting = true;
-        mListener.onEvent(PeripheralState.ADVERTISING, null);
+        mListener.onEvent(PeripheralState.ADVERTISING, mAdapter.getAddress());
         if (Objects.isNull(mGattServer)) {
             mGattServer = mBluetoothManager.openGattServer(mContext, mGattServerCallback);
         }
@@ -168,8 +221,9 @@ public class IoToothPeripheral extends AdvertiseCallback {
         mReadonlyCharacteristic = new BluetoothGattCharacteristic(mConfiguration.readonlyUuid,
                 BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                 BluetoothGattCharacteristic.PERMISSION_READ);
+        mReadonlyCharacteristic.addDescriptor(ToothConfiguration.getClientCharacteristicConfigurationDescriptor());
         mWritableCharacteristic = new BluetoothGattCharacteristic(mConfiguration.writableUuid,
-                BluetoothGattCharacteristic.PROPERTY_WRITE | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+                BluetoothGattCharacteristic.PROPERTY_WRITE,
                 BluetoothGattCharacteristic.PERMISSION_WRITE);
         gattService.addCharacteristic(mReadonlyCharacteristic);
         gattService.addCharacteristic(mWritableCharacteristic);

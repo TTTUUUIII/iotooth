@@ -23,7 +23,6 @@ import cn.touchair.iotooth.configuration.CentralConfiguration;
 public class CentralActivity extends AppCompatActivity implements View.OnClickListener, CentralStateListener {
     private static final String TAG = CentralActivity.class.getSimpleName();
     private IoToothCentral mCentral;
-    private CentralConfiguration mConfiguration;
     private ActivityCentralBinding binding;
     private String mRemoteAddress;
     private SimpleDateFormat mFormatter = new SimpleDateFormat("MM-dd HH:mm");
@@ -34,12 +33,12 @@ public class CentralActivity extends AppCompatActivity implements View.OnClickLi
         super.onCreate(savedInstanceState);
         binding = ActivityCentralBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        mCentral = new IoToothCentral(this, this);
-        mConfiguration = new CentralConfiguration(
-                "1b3f1e30-0f15-4f98-8d69-d2b97f4cedd6",
+        binding.mainLayout.messageEditText.setText("Hi, David!");
+        mCentral = new IoToothCentral(this, this, new CentralConfiguration(
+                "1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf",
                 "2bc66748-4f33-4a6f-aeb0-14f3677c30fe",
                 "ccb653e6-8006-d4c5-f215-6048075fae0f"
-        );
+        ));
         binding.connectBtn.setOnClickListener(this::onClick);
         binding.disconnectBtn.setOnClickListener(this::onClick);
         binding.mainLayout.sendBtn.setOnClickListener(this::onClick);
@@ -54,11 +53,11 @@ public class CentralActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void connect() {
-        mCentral.startWithConfiguration(mConfiguration);
+        mCentral.connect();
     }
 
     private void disconnect() {
-        mCentral.stop();
+        mCentral.disconnectAll();
     }
 
     private void send() {
@@ -94,6 +93,7 @@ public class CentralActivity extends AppCompatActivity implements View.OnClickLi
 
     private void updateMessage() {
         binding.mainLayout.messageShowTextView.setText(mMessageCache);
+        binding.mainLayout.scrollView.fullScroll(View.FOCUS_DOWN);
     }
     private void updateUI() {
         binding.mainLayout.stateTextView.setText("状态：" + stateString());
@@ -105,7 +105,7 @@ public class CentralActivity extends AppCompatActivity implements View.OnClickLi
     private String stateString() {
         switch (mState) {
             case CONNECTED:
-                return "已连接";
+                return "已连接[" + mRemoteAddress + "]";
             case DISCONNECTED:
                 return "未连接";
             case SCANNING:

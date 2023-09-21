@@ -25,9 +25,10 @@
         app:layout_constraintStart_toStartOf="parent">
 
         <Button
-            android:id="@+id/advert_btn"
+            android:id="@+id/tggle_btn"
+            app:cornerRadius="5dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="广播" />
+            android:text="启用" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

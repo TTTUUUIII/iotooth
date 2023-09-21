@@ -29,10 +29,10 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_CONNECT);
             ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_SCAN);
+            ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_ADVERTISE);
+            ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_CONNECT);
         }
-        ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_ADVERTISE);
         ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH);
-        ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_CONNECT);
         ALL_PERMISSIONS.add(Manifest.permission.BLUETOOTH_ADMIN);
         ALL_PERMISSIONS.add(Manifest.permission.ACCESS_FINE_LOCATION);
         ALL_PERMISSIONS.add(Manifest.permission.ACCESS_COARSE_LOCATION);
