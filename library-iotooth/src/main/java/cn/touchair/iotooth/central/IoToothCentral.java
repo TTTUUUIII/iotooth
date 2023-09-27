@@ -30,7 +30,7 @@ import java.util.Objects;
 
 import cn.touchair.iotooth.configuration.CentralConfiguration;
 
-public class IoToothCentral extends ScanCallback {
+public class IoToothCentral extends ScanCallback{
     private static final String TAG = IoToothCentral.class.getSimpleName();
     private static final int MSG_WHAT_STOP_SCAN = 0;
     private final Context mContext;
@@ -38,6 +38,8 @@ public class IoToothCentral extends ScanCallback {
     private final CentralStateListener mListener;
     private final BluetoothManager mBluetoothManager;
     private final BluetoothLeScanner mLeScanner;
+    private ScanResultCallback mScanCallback;
+
     private final Handler mH = new Handler(Objects.requireNonNull(Looper.myLooper())) {
         @Override
         public void handleMessage(@NonNull Message msg) {
@@ -52,7 +54,6 @@ public class IoToothCentral extends ScanCallback {
     };
 
     private final HashMap<String, GattCallbackImpl> mGattHandlersMap = new HashMap<>();
-    private BluetoothDevice mRemote;
 
     @SuppressLint("MissingPermission")
     public IoToothCentral(@NonNull Context context, @NonNull CentralStateListener listener, @NonNull CentralConfiguration configuration) {
@@ -70,8 +71,15 @@ public class IoToothCentral extends ScanCallback {
         }
     }
 
-    public void connect() {
+    public void connect(@NonNull BluetoothDevice remote) {
+        openGatt(remote);
+    }
+
+    public void scanWithDuration(long sec, ScanResultCallback callback) {
+        mScanCallback = callback;
         scanService();
+        mH.sendEmptyMessageDelayed(MSG_WHAT_STOP_SCAN,
+                sec);
     }
 
     public void disconnect(@NonNull String addr) {
@@ -104,7 +112,7 @@ public class IoToothCentral extends ScanCallback {
 
     @SuppressLint("MissingPermission")
     private void scanService() {
-        mListener.onEvent(CentralState.SCANNING, null);
+        mScanCallback.onScanStarted();
         ArrayList<ScanFilter> filters = new ArrayList<>();
         ScanFilter filter = new ScanFilter.Builder()
                 .setServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
@@ -112,25 +120,20 @@ public class IoToothCentral extends ScanCallback {
         filters.add(filter);
         ScanSettings settings = new ScanSettings.Builder().build();
         mLeScanner.startScan(filters, settings, this);
-        mH.sendEmptyMessageDelayed(MSG_WHAT_STOP_SCAN,
-                1000 * 20);
     }
 
     @SuppressLint("MissingPermission")
     private void stopScanService() {
         mLeScanner.stopScan(this);
-        if (mRemote == null) {
-            mListener.onEvent(CentralState.DISCONNECTED, null);
-        }
+        mScanCallback.onScanStopped();
     }
 
     @SuppressLint("MissingPermission")
-    private void openGatt() {
-        assert mRemote != null : "Bluetooth gatt is null!";
+    private void openGatt(@NonNull BluetoothDevice device) {
         GattCallbackImpl handler = new GattCallbackImpl(mConfiguration, mListener);
-        BluetoothGatt gatt = mRemote.connectGatt(mContext, false, handler);
+        BluetoothGatt gatt = device.connectGatt(mContext, false, handler);
         if (gatt != null) {
-            mGattHandlersMap.put(mRemote.getAddress(), handler);
+            mGattHandlersMap.put(device.getAddress(), handler);
             mListener.onEvent(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
         }
     }
@@ -138,10 +141,7 @@ public class IoToothCentral extends ScanCallback {
     @Override
     public void onScanResult(int callbackType, ScanResult result) {
         super.onScanResult(callbackType, result);
-        mRemote = result.getDevice();
-        mH.removeMessages(MSG_WHAT_STOP_SCAN);
-        mH.obtainMessage(MSG_WHAT_STOP_SCAN).sendToTarget();
-        mH.postDelayed(this::openGatt, 800);
+        mScanCallback.onScanResult(result);
     }
 
     @Override

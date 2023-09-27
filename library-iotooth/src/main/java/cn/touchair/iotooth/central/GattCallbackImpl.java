@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -34,8 +35,22 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     private BluetoothGattCharacteristic mWritableCharacteristic;
     private CentralState mState = CentralState.OPENED_GATT;
     private CentralStateListener mListener;
-    private boolean isConnected = false;
+    private volatile boolean mIsConnected = false;
+    private volatile long mRssiReportInterval = 5000L;
+    @SuppressLint("MissingPermission")
+    private Runnable mRssiReader = () -> {
+        while (mIsConnected) {
+            try {
+                mBluetoothGatt.readRemoteRssi();
+                SystemClock.sleep(mRssiReportInterval);
+            } catch (Exception e) {
+                Log.w(TAG, "Read rssi failed, thread exit.");
+                break;
+            }
+        }
+    };
     private Logger mLogger = Logger.getLogger(GattCallbackImpl.class);
+
     public GattCallbackImpl(@NonNull CentralConfiguration configuration, @NonNull CentralStateListener listener) {
         mConfiguration = configuration;
         mListener = listener;
@@ -48,14 +63,15 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         String address = gatt.getDevice().getAddress();
         switch (newState) {
             case BluetoothGatt.STATE_CONNECTED:
-                isConnected = true;
+                mIsConnected = true;
                 mBluetoothGatt = gatt;
                 gatt.discoverServices();
+                startReportRssi();
                 break;
             case BluetoothGatt.STATE_CONNECTING:
                 break;
             case BluetoothGatt.STATE_DISCONNECTED:
-                isConnected = false;
+                mIsConnected = false;
                 handleState(CentralState.DISCONNECTED, address);
                 mBluetoothGatt = null;
                 break;
@@ -70,9 +86,9 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         super.onServicesDiscovered(gatt, status);
         if (GlobalConfig.DEBUG) {
             Set<UUID> services = gatt.getServices()
-                            .stream()
-                            .map(service -> service.getUuid())
-                            .collect(Collectors.toSet());
+                    .stream()
+                    .map(service -> service.getUuid())
+                    .collect(Collectors.toSet());
             mLogger.debug("SERVICE_LIST", services);
         }
         BluetoothGattService service = gatt.getService(mConfiguration.serviceUuid);
@@ -124,25 +140,37 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         Log.d(TAG, "onCharacteristicWrite");
     }
 
-    @Override
-    public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
-        super.onCharacteristicChanged(gatt, characteristic, value);
-        if (GlobalConfig.DEBUG) {
-            Log.d(TAG, new String(value));
-        }
-        mListener.onMessage(0, value);
-    }
+//    @Override
+//    public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
+//        super.onCharacteristicChanged(gatt, characteristic, value);
+//        if (mListener == null) return;
+//        if (GlobalConfig.DEBUG) {
+//            Log.d(TAG, new String(value));
+//        }
+//        String address = gatt.getDevice().getAddress();
+//        mListener.onMessage(0, value, address);
+//    }
 
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        mListener.onMessage(0, characteristic.getValue());
+        if (mListener == null) return;
+        String address = gatt.getDevice().getAddress();
+        mListener.onMessage(0, characteristic.getValue(), address);
     }
 
     @Override
     public void onDescriptorRead(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattDescriptor descriptor, int status, @NonNull byte[] value) {
         super.onDescriptorRead(gatt, descriptor, status, value);
         Log.d(TAG, "onDescriptorRead");
+    }
+
+    @Override
+    public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+        super.onReadRemoteRssi(gatt, rssi, status);
+        String address = gatt.getDevice().getAddress();
+        if (mListener == null) return;
+        mListener.onEvent(CentralState.RSSI_REPORTER, String.format("{address: \"%s\", rssi: \"%d\"}", address, rssi));
     }
 
     @Override
@@ -159,6 +187,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     @Override
     public void onServiceChanged(@NonNull BluetoothGatt gatt) {
         gatt.disconnect();
+        mIsConnected = false;
         mListener.onEvent(CentralState.DISCONNECTED, gatt.getDevice().getAddress());
         Log.i(TAG, "onServiceChanged");
     }
@@ -183,17 +212,22 @@ public class GattCallbackImpl extends BluetoothGattCallback {
 
     @SuppressLint("MissingPermission")
     public void close() {
-        if (isConnected) {
+        if (mIsConnected) {
             handleState(CentralState.DISCONNECTED, mBluetoothGatt.getDevice().getAddress());
             mBluetoothGatt.close();
-            isConnected = false;
+            mIsConnected = false;
         }
         mListener = null;
         mBluetoothGatt = null;
     }
 
-    private void handleState(@NonNull CentralState newState, @Nullable Object obj) {
+    private void handleState(@NonNull CentralState newState, @Nullable String address) {
         mState = newState;
-        mListener.onEvent(mState, obj);
+        mListener.onEvent(mState, address);
+    }
+
+    private void startReportRssi() {
+//        new Thread(mRssiReader)
+//                .start();
     }
 }

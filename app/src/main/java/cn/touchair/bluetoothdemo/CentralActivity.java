@@ -5,115 +5,97 @@
 
 package cn.touchair.bluetoothdemo;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Objects;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityCentralBinding;
+import cn.touchair.bluetoothdemo.fragment.FindRemoteFragment;
 import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.central.CentralStateListener;
 import cn.touchair.iotooth.central.IoToothCentral;
+import cn.touchair.iotooth.central.ScanResultCallback;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
 
-public class CentralActivity extends AppCompatActivity implements View.OnClickListener, CentralStateListener {
+public class CentralActivity extends AppCompatActivity implements  CentralStateListener {
     private static final String TAG = CentralActivity.class.getSimpleName();
     private IoToothCentral mCentral;
     private ActivityCentralBinding binding;
-    private String mRemoteAddress;
-    private SimpleDateFormat mFormatter = new SimpleDateFormat("MM-dd HH:mm");
-    private CentralState mState = CentralState.SCANNING;
-    private final StringBuilder mMessageCache = new StringBuilder();
+    private FragmentManager mFragmentManager;
+
+    private HashMap<String, CentralStateListener> mObservers = new HashMap<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityCentralBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        binding.mainLayout.messageEditText.setText("Hi, David!");
+        mFragmentManager = getSupportFragmentManager();
         mCentral = new IoToothCentral(this, this, new CentralConfiguration(
                 "1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf",
                 "2bc66748-4f33-4a6f-aeb0-14f3677c30fe",
                 "ccb653e6-8006-d4c5-f215-6048075fae0f"
         ));
-        binding.connectBtn.setOnClickListener(this::onClick);
-        binding.disconnectBtn.setOnClickListener(this::onClick);
-        binding.mainLayout.sendBtn.setOnClickListener(this::onClick);
+        if (Objects.isNull(savedInstanceState)) {
+            FindRemoteFragment findRemoteFragment = FindRemoteFragment.newInstance();
+            mFragmentManager.beginTransaction()
+                    .add(R.id.fragment_container, findRemoteFragment, FindRemoteFragment.class.getCanonicalName())
+                    .addToBackStack(null)
+                    .commit();
+        }
     }
 
-    @Override
-    public void onClick(View v) {
-        int id = v.getId();
-        if (id == R.id.connect_btn) connect();
-        if (id == R.id.disconnect_btn) disconnect();
-        if (id == R.id.send_btn) send();
+    public void connect(@NonNull BluetoothDevice remote, CentralStateListener listener) {
+        String address = remote.getAddress();
+        if (mObservers.get(address) != null) return;
+        mObservers.put(address, listener);
+        mCentral.connect(remote);
     }
 
-    private void connect() {
-        mCentral.connect();
+    public void disconnect(BluetoothDevice remote) {
+        mCentral.disconnect(remote.getAddress());
     }
 
-    private void disconnect() {
+    private void disconnectAll() {
         mCentral.disconnectAll();
     }
 
-    private void send() {
-        if (mRemoteAddress != null) {
-            String sendMsg = binding.mainLayout.messageEditText.getText().toString();
-            if (sendMsg.isEmpty()) return;
-            mCentral.send(mRemoteAddress, sendMsg);
+    public void send(@NonNull String address, @NonNull String sendMsg) {
+        if (sendMsg.isEmpty()) return;
+        mCentral.send(address, sendMsg);
+    }
+
+    @Override
+    public void onEvent(CentralState event, @NonNull String address) {
+        CentralStateListener listener = mObservers.get(address);
+        if (Objects.nonNull(listener)) {
+            listener.onEvent(event, address);
         }
     }
 
     @Override
-    public void onEvent(CentralState event, Object obj) {
-        Log.d(TAG, String.format("CentralEvent: {%s, %s}", event, obj));
-        switch (event) {
-            case CONNECTED:
-                mRemoteAddress = (String) obj;
-                break;
-            case DISCONNECTED:
-                mRemoteAddress = null;
-                break;
-            default:
+    public void onMessage(int offset, byte[] data, @NonNull String address) {
+        CentralStateListener listener = mObservers.get(address);
+        if (Objects.nonNull(listener)) {
+            listener.onMessage(offset, data, address);
         }
-        mState = event;
-        runOnUiThread(this::updateUI);
     }
 
-    @Override
-    public void onMessage(int offset, byte[] data) {
-        String newMessage = new String(data, StandardCharsets.UTF_8);
-        mMessageCache.append(String.format("\n%s:\t\t%s", mFormatter.format(System.currentTimeMillis()), newMessage));
-        runOnUiThread(this::updateMessage);
+    public void startScan(@NonNull ScanResultCallback callback) {
+        mCentral.scanWithDuration(1000 * 10, callback);
     }
 
-    private void updateMessage() {
-        binding.mainLayout.messageShowTextView.setText(mMessageCache);
-        binding.mainLayout.scrollView.fullScroll(View.FOCUS_DOWN);
-    }
-    private void updateUI() {
-        binding.mainLayout.stateTextView.setText("状态：" + stateString());
-        binding.connectBtn.setEnabled(mState != CentralState.CONNECTED);
-        binding.disconnectBtn.setEnabled(mState == CentralState.CONNECTED);
-        binding.mainLayout.sendBtn.setEnabled(mState == CentralState.CONNECTED);
-    }
-
-    private String stateString() {
-        switch (mState) {
-            case CONNECTED:
-                return "已连接[" + mRemoteAddress + "]";
-            case DISCONNECTED:
-                return "未连接";
-            case SCANNING:
-                return "扫描中";
-            case OPENED_GATT:
-                return "已接入GATT";
-            default:
-        }
-        return "未定义";
+    public void startFragment(@NonNull Fragment fragment) {
+        String tag = fragment.getClass().getCanonicalName();
+        mFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, fragment, tag)
+                .addToBackStack(null)
+                .commit();
     }
 }

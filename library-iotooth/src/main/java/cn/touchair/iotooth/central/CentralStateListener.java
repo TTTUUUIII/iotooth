@@ -5,9 +5,9 @@
 
 package cn.touchair.iotooth.central;
 
-import cn.touchair.iotooth.central.CentralState;
+import androidx.annotation.NonNull;
 
 public interface CentralStateListener {
-    void onEvent(CentralState event, Object obj);
-    void  onMessage(int offset, byte[] data);
+    void onEvent(CentralState event, @NonNull String address);
+    void  onMessage(int offset, byte[] data, @NonNull String address);
 }
