@@ -141,7 +141,6 @@ public class IoToothPeripheral extends AdvertiseCallback {
     @SuppressLint("MissingPermission")
     private   IoToothPeripheral(@NonNull Context ctx, @Nullable PeriheralStateListener listener, @NonNull PeripheralConfiguration configuration) {
         Objects.requireNonNull(ctx);
-        Objects.requireNonNull(listener);
         Objects.requireNonNull(configuration);
         mContext = ctx;
         mBluetoothManager = (BluetoothManager) ctx.getSystemService(Context.BLUETOOTH_SERVICE);
@@ -200,7 +199,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
                 .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
                 .setIncludeTxPowerLevel(true);
         if (mConfiguration != null) {
-            dataBuilder.setIncludeDeviceName(true);
+            dataBuilder.setIncludeDeviceName(false);
             mAdapter.setName(mConfiguration.serviceLocalName);
         }
         BluetoothLeAdvertiser advertiser = mAdapter.getBluetoothLeAdvertiser();
