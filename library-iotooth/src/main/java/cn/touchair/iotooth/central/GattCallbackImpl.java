@@ -140,16 +140,14 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         Log.d(TAG, "onCharacteristicWrite");
     }
 
-//    @Override
-//    public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
-//        super.onCharacteristicChanged(gatt, characteristic, value);
-//        if (mListener == null) return;
-//        if (GlobalConfig.DEBUG) {
-//            Log.d(TAG, new String(value));
-//        }
-//        String address = gatt.getDevice().getAddress();
-//        mListener.onMessage(0, value, address);
-//    }
+    @Override
+    public void onCharacteristicChanged(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value) {
+        super.onCharacteristicChanged(gatt, characteristic, value);
+        if (GlobalConfig.DEBUG) {
+            Log.d(TAG, new String(value));
+        }
+//        mListener.onMessage(0, value);
+    }
 
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
