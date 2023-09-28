@@ -15,7 +15,6 @@ import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -25,9 +24,12 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 import cn.touchair.iotooth.GlobalConfig;
@@ -38,7 +40,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
     private static final String TAG = IoToothPeripheral.class.getSimpleName();
     private Context mContext;
     private BluetoothAdapter mAdapter;
-    private PeriheralStateListener mListener;
+    private List<PeriheralStateListener> mListeners = new ArrayList<>();
     private PeripheralConfiguration mConfiguration;
     private BluetoothManager mBluetoothManager;
     private BluetoothGattServer mGattServer;
@@ -55,16 +57,16 @@ public class IoToothPeripheral extends AdvertiseCallback {
             switch (newState) {
                 case BluetoothGattServer.STATE_CONNECTED:
                     mConnectedDevice = device;
-                    mListener.onEvent(PeripheralState.CONNECTED, device.getAddress());
+                    dispatchEvent(PeripheralState.CONNECTED, device.getAddress());
                     stopAdvertising();
                     break;
                 case BluetoothGattServer.STATE_DISCONNECTED:
                     mConnectedDevice = null;
-                    mListener.onEvent(PeripheralState.DISCONNECTED, null);
+                    dispatchEvent(PeripheralState.DISCONNECTED, null);
                     startAdverting();
                     break;
                 case BluetoothGattServer.STATE_CONNECTING:
-                    mListener.onEvent(PeripheralState.CONNECTING, null);
+                    dispatchEvent(PeripheralState.CONNECTING, null);
                     break;
             }
         }
@@ -94,7 +96,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
             if (GlobalConfig.DEBUG) {
                 Log.d(TAG, "onCharacteristicWriteRequest: " + new String(value));
             }
-            mListener.onMessage(offset, value);
+            dispatchMessage(offset, value);
             if (responseNeeded) {
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
             }
@@ -137,18 +139,29 @@ public class IoToothPeripheral extends AdvertiseCallback {
     };
 
     @SuppressLint("MissingPermission")
-    public  IoToothPeripheral(@NonNull Context ctx, @NonNull PeriheralStateListener listener, @NonNull PeripheralConfiguration configuration) {
+    private   IoToothPeripheral(@NonNull Context ctx, @Nullable PeriheralStateListener listener, @NonNull PeripheralConfiguration configuration) {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(listener);
         Objects.requireNonNull(configuration);
         mContext = ctx;
         mBluetoothManager = (BluetoothManager) ctx.getSystemService(Context.BLUETOOTH_SERVICE);
-        mListener = listener;
+        if (Objects.nonNull(listener)) {
+            mListeners.add(listener);
+        }
         mConfiguration = configuration;
         mAdapter = mBluetoothManager.getAdapter();
         if (!mAdapter.isEnabled() && !mAdapter.enable()) {
             Log.d(TAG, "Bluetooth not enable.");
         }
+    }
+
+    public void addEventListener(@NonNull PeriheralStateListener listener) {
+        if (mListeners.contains(listener)) return;
+        mListeners.add(listener);
+    }
+
+    public void removeEventListener(@NonNull PeriheralStateListener listener) {
+        mListeners.remove(listener);
     }
 
     @SuppressLint("MissingPermission")
@@ -164,7 +177,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
             mGattServer.close();
             mGattServer = null;
         }
-        mListener.onEvent(PeripheralState.DISCONNECTED, null);
+        dispatchEvent(PeripheralState.DISCONNECTED, null);
     }
 
     @SuppressLint("MissingPermission")
@@ -212,7 +225,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
     public void onStartSuccess(AdvertiseSettings settingsInEffect) {
         super.onStartSuccess(settingsInEffect);
         mIsAdverting = true;
-        mListener.onEvent(PeripheralState.ADVERTISING, mAdapter.getAddress());
+        dispatchEvent(PeripheralState.ADVERTISING, mAdapter.getAddress());
         if (Objects.isNull(mGattServer)) {
             mGattServer = mBluetoothManager.openGattServer(mContext, mGattServerCallback);
         }
@@ -234,5 +247,45 @@ public class IoToothPeripheral extends AdvertiseCallback {
     public void onStartFailure(int errorCode) {
         super.onStartFailure(errorCode);
         Log.e(TAG, "Failed to start advertising, errorCode=" + errorCode);
+    }
+
+    private void dispatchEvent(@NonNull PeripheralState event, Object obj) {
+        mListeners.forEach(listener -> {
+            try {
+                listener.onEvent(event, obj);
+            } catch (Exception e) {
+                Log.w(TAG, "Listener dead.");
+            }
+        });
+    }
+
+    private void dispatchMessage(int offset, byte[] data) {
+        mListeners.forEach(listener -> {
+            try {
+                listener.onMessage(offset, data);
+            } catch (Exception e) {
+                Log.w(TAG, "Listener dead.");
+            }
+        });
+    }
+
+    public static class Builder {
+        private Context context;
+        private PeripheralConfiguration configuration;
+        private PeriheralStateListener listener;
+
+        public  Builder(@NonNull Context ctx, @NonNull PeripheralConfiguration configuration) {
+            context = ctx;
+            this.configuration = configuration;
+        }
+
+        public Builder setEventListener(@Nullable PeriheralStateListener listener) {
+            this.listener = listener;
+            return this;
+        }
+
+        public IoToothPeripheral build() {
+            return new IoToothPeripheral(context, listener, configuration);
+        }
     }
 }

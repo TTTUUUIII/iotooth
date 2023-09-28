@@ -23,19 +23,21 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 import cn.touchair.iotooth.configuration.CentralConfiguration;
 
-public class IoToothCentral extends ScanCallback{
+public class IoToothCentral extends ScanCallback implements CentralStateListener{
     private static final String TAG = IoToothCentral.class.getSimpleName();
     private static final int MSG_WHAT_STOP_SCAN = 0;
     private final Context mContext;
     private final CentralConfiguration mConfiguration;
-    private final CentralStateListener mListener;
+    private final List<CentralStateListener> mListeners = new ArrayList<>();
     private final BluetoothManager mBluetoothManager;
     private final BluetoothLeScanner mLeScanner;
     private ScanResultCallback mScanCallback;
@@ -56,12 +58,14 @@ public class IoToothCentral extends ScanCallback{
     private final HashMap<String, GattCallbackImpl> mGattHandlersMap = new HashMap<>();
 
     @SuppressLint("MissingPermission")
-    public IoToothCentral(@NonNull Context context, @NonNull CentralStateListener listener, @NonNull CentralConfiguration configuration) {
+    private IoToothCentral(@NonNull Context context, @Nullable CentralStateListener listener, @NonNull CentralConfiguration configuration) {
         Objects.requireNonNull(configuration);
         Objects.requireNonNull(context);
         Objects.requireNonNull(listener);
         mContext = context;
-        mListener = listener;
+        if (Objects.nonNull(listener)) {
+            addEventListener(listener);
+        }
         mConfiguration = configuration;
         mBluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
         mLeScanner = mBluetoothManager.getAdapter().getBluetoothLeScanner();
@@ -71,13 +75,26 @@ public class IoToothCentral extends ScanCallback{
         }
     }
 
+    public synchronized void addEventListener(CentralStateListener listener) {
+        if (mListeners.contains(listener)) return;
+        mListeners.add(listener);
+    }
+
+    public synchronized void removeEventListener(CentralStateListener listener) {
+        mListeners.remove(listener);
+    }
+
     public void connect(@NonNull BluetoothDevice remote) {
         openGatt(remote);
     }
 
     public void scanWithDuration(long sec, ScanResultCallback callback) {
+        scanWithDuration(sec, callback, null);
+    }
+
+    public void scanWithDuration(long sec, ScanResultCallback callback, ScanFilter filter) {
         mScanCallback = callback;
-        scanService();
+        scanService(filter);
         mH.sendEmptyMessageDelayed(MSG_WHAT_STOP_SCAN,
                 sec);
     }
@@ -94,6 +111,7 @@ public class IoToothCentral extends ScanCallback{
             handler.close();
         });
         mGattHandlersMap.clear();
+        mListeners.clear();
     }
 
     public void send(@NonNull String address, String msg) {
@@ -110,16 +128,37 @@ public class IoToothCentral extends ScanCallback{
         }
     }
 
+    private synchronized void dispatchEvent(CentralState event, String addr) {
+        mListeners.forEach(listener -> {
+            try {
+                listener.onEvent(event, addr);
+            } catch (Exception exception) {
+                Log.w(TAG, "Listener dead.");
+            }
+        });
+    }
+
+    private synchronized void dispatchMessage(int offset, byte[] data, String addr) {
+        mListeners.forEach(listener -> {
+            try {
+                listener.onMessage(offset, data, addr);
+            } catch (Exception exception) {
+                Log.w(TAG, "Listener dead.");
+            }
+        });
+    }
+
     @SuppressLint("MissingPermission")
-    private void scanService() {
+    private void scanService(@Nullable ScanFilter filter) {
         mScanCallback.onScanStarted();
-        ArrayList<ScanFilter> filters = new ArrayList<>();
-        ScanFilter filter = new ScanFilter.Builder()
-                .setServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
-                .build();
-        filters.add(filter);
-        ScanSettings settings = new ScanSettings.Builder().build();
-        mLeScanner.startScan(filters, settings, this);
+        if (Objects.isNull(filter)) {
+            mLeScanner.startScan(this);
+        } else {
+            ArrayList<ScanFilter> filters = new ArrayList<>();
+            filters.add(filter);
+            ScanSettings settings = new ScanSettings.Builder().build();
+            mLeScanner.startScan(filters, settings, this);
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -130,11 +169,11 @@ public class IoToothCentral extends ScanCallback{
 
     @SuppressLint("MissingPermission")
     private void openGatt(@NonNull BluetoothDevice device) {
-        GattCallbackImpl handler = new GattCallbackImpl(mConfiguration, mListener);
+        GattCallbackImpl handler = new GattCallbackImpl(mConfiguration, this);
         BluetoothGatt gatt = device.connectGatt(mContext, false, handler);
         if (gatt != null) {
             mGattHandlersMap.put(device.getAddress(), handler);
-            mListener.onEvent(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
+            dispatchEvent(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
         }
     }
 
@@ -150,4 +189,33 @@ public class IoToothCentral extends ScanCallback{
         Log.e(TAG, "Scan failed. errorCode=" + errorCode);
     }
 
+    @Override
+    public void onEvent(CentralState event, @NonNull String address) {
+        dispatchEvent(event, address);
+    }
+
+    @Override
+    public void onMessage(int offset, byte[] data, @NonNull String address) {
+        dispatchMessage(offset, data, address);
+    }
+
+    public static class Builder {
+        private Context context;
+        private CentralConfiguration configuration;
+        private CentralStateListener listener;
+
+        public  Builder(@NonNull Context ctx, @NonNull CentralConfiguration configuration) {
+            context = ctx;
+            this.configuration = configuration;
+        }
+
+        public Builder setEventListener(CentralStateListener listener) {
+            this.listener = listener;
+            return this;
+        }
+
+        public IoToothCentral build() {
+            return new IoToothCentral(context, listener, configuration);
+        }
+    }
 }

@@ -37,11 +37,9 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
         TempState.defaultButtonBackgroundTintList = binding.tggleBtn.getBackgroundTintList();
         setContentView(binding.getRoot());
         binding.mainLayout.messageEditText.setText("I'm David!");
-        mPeripheral = new IoToothPeripheral(this, this, new PeripheralConfiguration(
-                "1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf",
-                "2bc66748-4f33-4a6f-aeb0-14f3677c30fe",
-                "ccb653e6-8006-d4c5-f215-6048075fae0f"
-        ));
+        mPeripheral = new IoToothPeripheral.Builder(this, new PeripheralConfiguration("1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf"))
+                .setEventListener(this)
+                .build();
         binding.mainLayout.sendBtn.setOnClickListener(this::onAction);
         binding.tggleBtn.setOnClickListener(this::onAction);
     }
