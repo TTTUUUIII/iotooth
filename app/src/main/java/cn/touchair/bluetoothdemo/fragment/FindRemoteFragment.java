@@ -100,6 +100,7 @@ public class FindRemoteFragment extends Fragment implements ScanResultCallback, 
         int id = v.getId();
         if (id == R.id.scan_btn) {
             if (Objects.nonNull(mParent)) {
+                mRemoteList.clear();
                 mParent.startScan(this);
             }
         }

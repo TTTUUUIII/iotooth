@@ -37,11 +37,9 @@ public class CentralActivity extends AppCompatActivity implements  CentralStateL
         binding = ActivityCentralBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         mFragmentManager = getSupportFragmentManager();
-        mCentral = new IoToothCentral(this, this, new CentralConfiguration(
-                "1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf",
-                "2bc66748-4f33-4a6f-aeb0-14f3677c30fe",
-                "ccb653e6-8006-d4c5-f215-6048075fae0f"
-        ));
+        mCentral = new IoToothCentral.Builder(this, new CentralConfiguration("1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf"))
+                .setEventListener(this)
+                .build();
         if (Objects.isNull(savedInstanceState)) {
             FindRemoteFragment findRemoteFragment = FindRemoteFragment.newInstance();
             mFragmentManager.beginTransaction()
