@@ -51,6 +51,7 @@ public class FindRemoteFragment extends Fragment implements ScanResultCallback, 
     public void onStart() {
         super.onStart();
         mRemoteList.clear();
+        mAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -101,6 +102,7 @@ public class FindRemoteFragment extends Fragment implements ScanResultCallback, 
         if (id == R.id.scan_btn) {
             if (Objects.nonNull(mParent)) {
                 mRemoteList.clear();
+                mAdapter.notifyDataSetChanged();
                 mParent.startScan(this);
             }
         }

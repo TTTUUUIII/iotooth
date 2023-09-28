@@ -199,7 +199,7 @@ public class IoToothPeripheral extends AdvertiseCallback {
                 .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
                 .setIncludeTxPowerLevel(true);
         if (mConfiguration != null) {
-            dataBuilder.setIncludeDeviceName(false);
+            dataBuilder.setIncludeDeviceName(true);
             mAdapter.setName(mConfiguration.serviceLocalName);
         }
         BluetoothLeAdvertiser advertiser = mAdapter.getBluetoothLeAdvertiser();
