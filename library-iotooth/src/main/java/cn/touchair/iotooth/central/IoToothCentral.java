@@ -61,7 +61,6 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     private IoToothCentral(@NonNull Context context, @Nullable CentralStateListener listener, @NonNull CentralConfiguration configuration) {
         Objects.requireNonNull(configuration);
         Objects.requireNonNull(context);
-        Objects.requireNonNull(listener);
         mContext = context;
         if (Objects.nonNull(listener)) {
             addEventListener(listener);

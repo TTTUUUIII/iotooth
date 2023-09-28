@@ -20,6 +20,6 @@ public abstract class ToothConfiguration {
     }
 
     public UUID serviceUuid;
-    public UUID readonlyUuid;
-    public UUID writableUuid;
+    public UUID readonlyUuid = UUID.fromString("87ada2da-e829-4f2f-b884-acb3b67485e3");
+    public UUID writableUuid = UUID.fromString("599ca5b0-5e81-4e8e-b404-1694001e52a6");
 }
