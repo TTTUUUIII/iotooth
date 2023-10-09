@@ -1,5 +1,5 @@
 ### 外围设备大致流程如下：
-#### 1. 启动广播，已让设备可以被发现
+#### 1. 启动广播，以便让设备可以被发现
 ```java
 startWithConfiguration(IoToothConfiguration)
 ```
