@@ -3,6 +3,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        touchair {
+            storeFile file('D:\\Keystore\\touchair.jks')
+            storePassword 'touchair'
+            keyAlias 'touchair'
+            keyPassword 'touchair'
+        }
+    }
     namespace 'cn.touchair.bluetoothdemo'
     compileSdk 33
 
@@ -20,6 +28,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.touchair
         }
     }
     buildFeatures {

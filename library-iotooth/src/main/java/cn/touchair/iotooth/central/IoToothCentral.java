@@ -155,7 +155,8 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         } else {
             ArrayList<ScanFilter> filters = new ArrayList<>();
             filters.add(filter);
-            ScanSettings settings = new ScanSettings.Builder().build();
+            ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .build();
             mLeScanner.startScan(filters, settings, this);
         }
     }
