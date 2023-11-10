@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
 
 public class IoToothCentral extends ScanCallback implements CentralStateListener{
@@ -176,6 +177,9 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         GattCallbackImpl handler = new GattCallbackImpl(mConfiguration, this);
         BluetoothGatt gatt = device.connectGatt(mContext, false, handler);
         if (gatt != null) {
+            if (GlobalConfig.DEBUG) {
+                Log.d(TAG, String.format("BluetoothDevice: {name: %s, address: %s} open gatt => ok.", device.getName(), device.getAddress()));
+            }
             mGattHandlersMap.put(device.getAddress(), handler);
             dispatchEvent(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
         }

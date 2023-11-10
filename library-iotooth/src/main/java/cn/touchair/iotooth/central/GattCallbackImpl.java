@@ -61,6 +61,9 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
         String address = gatt.getDevice().getAddress();
+        if (GlobalConfig.DEBUG) {
+            Log.d(TAG, "onConnectionStateChange: newState=" + newState);
+        }
         switch (newState) {
             case BluetoothGatt.STATE_CONNECTED:
                 mIsConnected = true;
