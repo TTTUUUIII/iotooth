@@ -4,12 +4,12 @@ plugins {
 
 android {
     signingConfigs {
-        touchair {
-            storeFile file('D:\\Keystore\\touchair.jks')
-            storePassword 'touchair'
-            keyAlias 'touchair'
-            keyPassword 'touchair'
-        }
+//        touchair {
+//            storeFile file('D:\\Keystore\\touchair.jks')
+//            storePassword 'touchair'
+//            keyAlias 'touchair'
+//            keyPassword 'touchair'
+//        }
     }
     namespace 'cn.touchair.bluetoothdemo'
     compileSdk 33
@@ -28,7 +28,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.touchair
+//            signingConfig signingConfigs.touchair
         }
     }
     buildFeatures {
@@ -43,6 +43,7 @@ android {
 dependencies {
 
     implementation project(path: ":library-iotooth")
+//    implementation 'com.github.TTTUUUIII:iotooth-for-android:v1.0.0'
     implementation fileTree(dir: 'libs', includes: ['*.aar'])
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'

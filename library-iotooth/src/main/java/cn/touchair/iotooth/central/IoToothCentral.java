@@ -48,7 +48,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
             super.handleMessage(msg);
             switch (msg.what) {
                 case MSG_WHAT_STOP_SCAN:
-                    stopScanService();
+                    stopScanService(true);
                     break;
                 default:
             }
@@ -84,6 +84,8 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     }
 
     public void connect(@NonNull BluetoothDevice remote) {
+        Objects.requireNonNull(remote);
+        stopScanService(false);
         openGatt(remote);
     }
 
@@ -162,9 +164,11 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     }
 
     @SuppressLint("MissingPermission")
-    private void stopScanService() {
+    private void stopScanService(boolean notify) {
         mLeScanner.stopScan(this);
-        mScanCallback.onScanStopped();
+        if (notify) {
+            mScanCallback.onScanStopped();
+        }
     }
 
     @SuppressLint("MissingPermission")
