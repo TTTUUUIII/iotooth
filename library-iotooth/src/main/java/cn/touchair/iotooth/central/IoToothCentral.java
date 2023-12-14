@@ -182,6 +182,8 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
             }
             mGattHandlersMap.put(device.getAddress(), handler);
             dispatchEvent(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
+        } else {
+            Log.d(TAG, "Unable open gatt");
         }
     }
 

@@ -25,6 +25,7 @@ import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.Logger;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
 import cn.touchair.iotooth.configuration.ToothConfiguration;
+import cn.touchair.iotooth.util.ToothUtils;
 
 public class GattCallbackImpl extends BluetoothGattCallback {
 
@@ -225,6 +226,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     private void handleState(@NonNull CentralState newState, @Nullable String address) {
         mState = newState;
         mListener.onEvent(mState, address);
+        Log.d(TAG, "Notify new state => " + ToothUtils.stateToString(mState));
     }
 
     private void startReportRssi() {
