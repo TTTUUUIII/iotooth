@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,7 +34,7 @@ import cn.touchair.iotooth.central.ScanResultCallback;
 public class FindRemoteFragment extends Fragment implements ScanResultCallback, View.OnClickListener {
     private FragmentFindRemoteBinding binding;
     private CentralActivity mParent;
-    private List<BluetoothDevice> mRemoteList = new ArrayList<>();
+    private List<ScanResult> mRemoteList = new ArrayList<>();
     private RemoteViewAdapter mAdapter = new RemoteViewAdapter();
 
     @Nullable
@@ -44,6 +45,10 @@ public class FindRemoteFragment extends Fragment implements ScanResultCallback, 
         binding.scanBtn.setOnClickListener(this::onClick);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
         binding.recyclerView.setAdapter(mAdapter);
+        ActionBar actionBar = mParent.getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setSubtitle("");
+        }
         return binding.getRoot();
     }
 
@@ -75,14 +80,14 @@ public class FindRemoteFragment extends Fragment implements ScanResultCallback, 
         BluetoothDevice device = result.getDevice();
         String address = device.getAddress();
         if (!contains(address)) {
-            mRemoteList.add(device);
+            mRemoteList.add(result);
             mAdapter.notifyItemInserted(mRemoteList.size());
         }
     }
 
     private boolean contains(@NonNull String address) {
-        for (BluetoothDevice device : mRemoteList) {
-            if (device.getAddress().equals(address)) {
+        for (ScanResult result : mRemoteList) {
+            if (result.getDevice().getAddress().equals(address)) {
                 return true;
             }
         }
@@ -115,12 +120,14 @@ public class FindRemoteFragment extends Fragment implements ScanResultCallback, 
             this.itemBinding = itemBinding;
         }
 
-        public void bind(@NonNull BluetoothDevice device) {
+        public void bind(@NonNull ScanResult result) {
+            BluetoothDevice device = result.getDevice();
             @SuppressLint("MissingPermission") String name = device.getName();
             if (Objects.isNull(name)) name = "Unknown";
             String address = device.getAddress();
             itemBinding.deviceName.setText(name);
             itemBinding.deviceAddress.setText(address);
+            itemBinding.rssiTextView.setText(String.valueOf(result.getRssi()));
             itemBinding.connectBtn.setOnClickListener((view) -> {
                 CommunicateFragment communicateFragment = CommunicateFragment.newInstance();
                 Bundle arguments = communicateFragment.getArguments();

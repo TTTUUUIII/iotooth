@@ -35,8 +35,10 @@ import java.util.Objects;
 import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.configuration.ToothConfiguration;
+import cn.touchair.iotooth.util.RxFrameListener;
+import cn.touchair.iotooth.util.TransmitterAble;
 
-public class IoToothPeripheral extends AdvertiseCallback {
+public class IoToothPeripheral extends AdvertiseCallback implements TransmitterAble {
     private static final String TAG = IoToothPeripheral.class.getSimpleName();
     private Context mContext;
     private BluetoothAdapter mAdapter;
@@ -48,6 +50,8 @@ public class IoToothPeripheral extends AdvertiseCallback {
     private BluetoothDevice mConnectedDevice;
     private BluetoothGattCharacteristic mReadonlyCharacteristic;
     private BluetoothGattCharacteristic mWritableCharacteristic;
+
+    private RxFrameListener mRxFrameListener;
     private boolean mIsAdverting = false;
 
     private BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
@@ -93,9 +97,6 @@ public class IoToothPeripheral extends AdvertiseCallback {
         @Override
         public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
             super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite, responseNeeded, offset, value);
-            if (GlobalConfig.DEBUG) {
-                Log.d(TAG, "onCharacteristicWriteRequest: " + new String(value));
-            }
             dispatchMessage(offset, value);
             if (responseNeeded) {
                 mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value);
@@ -208,11 +209,21 @@ public class IoToothPeripheral extends AdvertiseCallback {
 
     @SuppressLint("MissingPermission")
     public void send(byte[] bytes) {
+        send(null, bytes);
+    }
+
+    @SuppressLint("MissingPermission")
+    public void send(@Nullable String address, byte[] bytes) {
         if (Objects.nonNull(mGattServer) && Objects.nonNull(mReadonlyCharacteristic)) {
             mReadonlyCharacteristic.setValue(bytes);
             boolean indicate = (mReadonlyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == BluetoothGattCharacteristic.PROPERTY_INDICATE;
             mGattServer.notifyCharacteristicChanged(mConnectedDevice, mReadonlyCharacteristic, indicate);
         }
+    }
+
+    @Override
+    public void setRxFrameListener(@Nullable RxFrameListener listener) {
+        mRxFrameListener = listener;
     }
 
     public void send(String msg) {
@@ -259,6 +270,12 @@ public class IoToothPeripheral extends AdvertiseCallback {
     }
 
     private void dispatchMessage(int offset, byte[] data) {
+        if (GlobalConfig.DEBUG) {
+            Log.d(TAG, "dispatchMessage: " + Arrays.toString(data));
+        }
+        if (Objects.nonNull(mRxFrameListener)) {
+            mRxFrameListener.onFrame(offset, data, null);
+        }
         mListeners.forEach(listener -> {
             try {
                 listener.onMessage(offset, data);

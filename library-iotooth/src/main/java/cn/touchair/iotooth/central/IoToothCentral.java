@@ -26,14 +26,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
 import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
+import cn.touchair.iotooth.util.RxFrameListener;
+import cn.touchair.iotooth.util.TransmitterAble;
 
-public class IoToothCentral extends ScanCallback implements CentralStateListener{
+public class IoToothCentral extends ScanCallback implements CentralStateListener, TransmitterAble {
     private static final String TAG = IoToothCentral.class.getSimpleName();
     private static final int MSG_WHAT_STOP_SCAN = 0;
     private final Context mContext;
@@ -42,6 +45,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     private final BluetoothManager mBluetoothManager;
     private final BluetoothLeScanner mLeScanner;
     private ScanResultCallback mScanCallback;
+    private RxFrameListener mRxFrameListener;
 
     private final Handler mH = new Handler(Objects.requireNonNull(Looper.myLooper())) {
         @Override
@@ -123,11 +127,17 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         }
     }
 
-    public void send(@NonNull String address, byte[] data) {
+    @Override
+    public void send(@Nullable String address, byte[] data) {
         GattCallbackImpl handler = mGattHandlersMap.get(address);
         if (handler != null) {
             handler.send(data);
         }
+    }
+
+    @Override
+    public void setRxFrameListener(@Nullable RxFrameListener listener) {
+        mRxFrameListener = listener;
     }
 
     private synchronized void dispatchEvent(CentralState event, String addr) {
@@ -141,9 +151,15 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     }
 
     private synchronized void dispatchMessage(int offset, byte[] data, String addr) {
+        if (GlobalConfig.DEBUG) {
+            Log.d(TAG, "dispatchMessage: " + Arrays.toString(data));
+        }
         mListeners.forEach(listener -> {
             try {
                 listener.onMessage(offset, data, addr);
+                if (Objects.nonNull(mRxFrameListener)) {
+                    mRxFrameListener.onFrame(offset, data, addr);
+                }
             } catch (Exception exception) {
                 Log.w(TAG, "Listener dead.");
             }

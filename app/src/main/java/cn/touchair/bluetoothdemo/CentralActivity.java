@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.ScanFilter;
 import android.os.Bundle;
 
 import java.util.HashMap;
@@ -23,6 +24,8 @@ import cn.touchair.iotooth.central.CentralStateListener;
 import cn.touchair.iotooth.central.IoToothCentral;
 import cn.touchair.iotooth.central.ScanResultCallback;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
+import cn.touchair.iotooth.util.TransmitterAble;
+import cn.touchair.iotooth.util.TransmitterController;
 
 public class CentralActivity extends AppCompatActivity implements  CentralStateListener {
     private static final String TAG = CentralActivity.class.getSimpleName();
@@ -86,7 +89,11 @@ public class CentralActivity extends AppCompatActivity implements  CentralStateL
     }
 
     public void startScan(@NonNull ScanResultCallback callback) {
-        mCentral.scanWithDuration(1000 * 10, callback);
+        mCentral.scanWithDuration(1000 * 10, callback, new ScanFilter.Builder().setDeviceName("TOOTH").build());
+    }
+
+    public TransmitterAble getTransmitterCore() {
+        return mCentral;
     }
 
     public void startFragment(@NonNull Fragment fragment) {

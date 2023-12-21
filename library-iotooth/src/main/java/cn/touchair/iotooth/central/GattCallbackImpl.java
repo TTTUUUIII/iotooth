@@ -154,6 +154,14 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     }
 
     @Override
+    public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
+        super.onReliableWriteCompleted(gatt, status);
+        if (GlobalConfig.DEBUG) {
+            Log.d(TAG, "onReliableWriteCompleted");
+        }
+    }
+
+    @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
         if (mListener == null) return;

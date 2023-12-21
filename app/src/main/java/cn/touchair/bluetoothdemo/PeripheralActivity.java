@@ -5,11 +5,14 @@
 
 package cn.touchair.bluetoothdemo;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import java.nio.charset.StandardCharsets;
@@ -20,9 +23,11 @@ import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.periheral.IoToothPeripheral;
 import cn.touchair.iotooth.periheral.PeriheralStateListener;
 import cn.touchair.iotooth.periheral.PeripheralState;
+import cn.touchair.iotooth.util.TransmitterController;
 
-public class PeripheralActivity extends AppCompatActivity implements PeriheralStateListener {
+public class PeripheralActivity extends AppCompatActivity implements PeriheralStateListener, TransmitterController.TransmitterCallback {
     private IoToothPeripheral mPeripheral;
+    private TransmitterController mController;
     private ActivityPeripheralBinding binding;
     private SimpleDateFormat mFormatter = new SimpleDateFormat("MM-dd HH:mm");
     private final StringBuilder mMessageCache = new StringBuilder();
@@ -40,6 +45,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
         mPeripheral = new IoToothPeripheral.Builder(this, new PeripheralConfiguration("1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf"))
                 .setEventListener(this)
                 .build();
+        mController = new TransmitterController(mPeripheral, this);
         binding.mainLayout.sendBtn.setOnClickListener(this::onAction);
         binding.tggleBtn.setOnClickListener(this::onAction);
     }
@@ -59,7 +65,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
         if (id == R.id.send_btn) {
             String sendMsg = binding.mainLayout.messageEditText.getText().toString().trim();
             if (sendMsg != null && !sendMsg.isEmpty()) {
-                mPeripheral.send(sendMsg);
+                mController.writeText(sendMsg);
             }
         }
     }
@@ -73,9 +79,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
 
     @Override
     public void onMessage(int offset, byte[] data) {
-        String newMessage = new String(data, StandardCharsets.UTF_8);
-        mMessageCache.append(String.format("\n%s:\t\t%s", mFormatter.format(System.currentTimeMillis()), newMessage));
-        runOnUiThread(this::updateMessage);
+        /*Ignored*/
     }
 
     private void updateMessage() {
@@ -105,6 +109,17 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
             default:
         }
         return "未定义";
+    }
+
+    @Override
+    public void onText(@Nullable String address, @NonNull String text) {
+        mMessageCache.append(String.format("\n%s:\t\t%s", mFormatter.format(System.currentTimeMillis()), text));
+        runOnUiThread(this::updateMessage);
+    }
+
+    @Override
+    public void onStream(@Nullable String address, float progress, byte[] raw) {
+        /*Ignored*/
     }
 }
 

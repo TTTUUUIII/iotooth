@@ -10,6 +10,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,8 +20,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.Fragment;
 
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Objects;
 
 import cn.touchair.bluetoothdemo.CentralActivity;
@@ -28,8 +30,10 @@ import cn.touchair.bluetoothdemo.R;
 import cn.touchair.bluetoothdemo.databinding.FragmentCommunicateBinding;
 import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.central.CentralStateListener;
+import cn.touchair.iotooth.util.TransmitterController;
+import cn.touchair.iotooth.util.TypeUtils;
 
-public class CommunicateFragment extends Fragment implements CentralStateListener, View.OnClickListener {
+public class CommunicateFragment extends Fragment implements CentralStateListener, View.OnClickListener, TransmitterController.TransmitterCallback {
     public static String ARG_KEY_CONNECT_TO = "connectTo";
     private FragmentCommunicateBinding binding;
     private BluetoothDevice mRemote;
@@ -39,6 +43,7 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
     private final StringBuilder mMessageCache = new StringBuilder();
     private final Handler mH = new Handler(Looper.getMainLooper());
     private CentralState mState = CentralState.DISCONNECTED;
+    private TransmitterController mController;
 
     @Nullable
     @Override
@@ -55,6 +60,7 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mParent = (CentralActivity) context;
+        mController = new TransmitterController(mParent.getTransmitterCore(), this);
     }
 
     private void connectTo() {
@@ -97,14 +103,9 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
         }
         binding.mainLayout.messageShowTextView.setText(mMessageCache.toString());
     }
-
     @Override
     public void onMessage(int offset, byte[] data, @NonNull String address) {
-        String message = new String(data, StandardCharsets.UTF_8);
-        mMessageCache.append(
-                String.format("%s\t\t%s\n", mFormatter.format(System.currentTimeMillis()), message)
-        );
-        mH.post(this::updateUI);
+        /*Ignored*/
     }
 
     @Override
@@ -123,8 +124,21 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
             final String msg = binding.mainLayout.messageEditText.getText().toString().trim();
             if (!msg.isEmpty() && Objects.nonNull(mRemote)) {
                 String address = mRemote.getAddress();
-                mParent.send(address, msg);
+                mController.writeText(address, msg);
             }
         }
+    }
+
+    @Override
+    public void onText(@Nullable String address, @NonNull String text) {
+        mMessageCache.append(
+                String.format("%s\t\t%s\n", mFormatter.format(System.currentTimeMillis()), text)
+        );
+        mH.post(this::updateUI);
+    }
+
+    @Override
+    public void onStream(@Nullable String address, float progress, byte[] raw) {
+
     }
 }
