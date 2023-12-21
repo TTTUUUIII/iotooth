@@ -194,7 +194,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
                 .setConnectable(true)
                 .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
-                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
                 .build();
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder()
                 .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
