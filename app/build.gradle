@@ -28,7 +28,7 @@ signingConfigs {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-//            signingConfig signingConfigs.touchair
+            signingConfig signingConfigs.touchair
         }
     }
     buildFeatures {

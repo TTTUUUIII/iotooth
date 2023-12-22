@@ -169,6 +169,10 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         startAdverting();
     }
 
+    public void enableWithPram(int menu,byte [] prm) {
+        startAdvertingWithPram(menu,prm);
+    }
+
     @SuppressLint("MissingPermission")
     public void disable() {
         stopAdvertising();
@@ -198,6 +202,26 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
                 .build();
         AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder()
                 .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
+                .setIncludeTxPowerLevel(true);
+        if (mConfiguration != null) {
+            dataBuilder.setIncludeDeviceName(true);
+            mAdapter.setName(mConfiguration.serviceLocalName);
+        }
+        BluetoothLeAdvertiser advertiser = mAdapter.getBluetoothLeAdvertiser();
+        advertiser.startAdvertising(settings, dataBuilder.build(), this);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void startAdvertingWithPram(int menu,byte [] pra) {
+        if (mIsAdverting) return;
+        AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                .setConnectable(true)
+                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
+                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+                .build();
+        AdvertiseData.Builder dataBuilder = new AdvertiseData.Builder()
+                .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
+                .addManufacturerData(menu,pra)
                 .setIncludeTxPowerLevel(true);
         if (mConfiguration != null) {
             dataBuilder.setIncludeDeviceName(true);
