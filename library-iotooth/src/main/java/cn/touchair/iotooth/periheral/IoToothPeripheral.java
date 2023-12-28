@@ -61,16 +61,16 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
             switch (newState) {
                 case BluetoothGattServer.STATE_CONNECTED:
                     mConnectedDevice = device;
-                    dispatchEvent(PeripheralState.CONNECTED, device.getAddress());
+                    dispatchState(PeripheralState.CONNECTED, device.getAddress());
                     stopAdvertising();
                     break;
                 case BluetoothGattServer.STATE_DISCONNECTED:
                     mConnectedDevice = null;
-                    dispatchEvent(PeripheralState.DISCONNECTED, null);
+                    dispatchState(PeripheralState.DISCONNECTED, null);
                     startAdverting();
                     break;
                 case BluetoothGattServer.STATE_CONNECTING:
-                    dispatchEvent(PeripheralState.CONNECTING, null);
+                    dispatchState(PeripheralState.CONNECTING, null);
                     break;
             }
         }
@@ -181,7 +181,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
             mGattServer.close();
             mGattServer = null;
         }
-        dispatchEvent(PeripheralState.DISCONNECTED, null);
+        dispatchState(PeripheralState.DISCONNECTED, null);
     }
 
     @SuppressLint("MissingPermission")
@@ -259,7 +259,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     public void onStartSuccess(AdvertiseSettings settingsInEffect) {
         super.onStartSuccess(settingsInEffect);
         mIsAdverting = true;
-        dispatchEvent(PeripheralState.ADVERTISING, mAdapter.getAddress());
+        dispatchState(PeripheralState.ADVERTISING, mAdapter.getAddress());
         if (Objects.isNull(mGattServer)) {
             mGattServer = mBluetoothManager.openGattServer(mContext, mGattServerCallback);
         }
@@ -283,10 +283,10 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         Log.e(TAG, "Failed to start advertising, errorCode=" + errorCode);
     }
 
-    private void dispatchEvent(@NonNull PeripheralState event, Object obj) {
+    private void dispatchState(@NonNull PeripheralState event, Object obj) {
         mListeners.forEach(listener -> {
             try {
-                listener.onEvent(event, obj);
+                listener.onStateChanged(event, obj);
             } catch (Exception e) {
                 Log.w(TAG, "Listener dead.");
             }

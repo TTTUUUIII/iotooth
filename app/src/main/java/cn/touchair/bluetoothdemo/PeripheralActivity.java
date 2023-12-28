@@ -71,7 +71,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
     }
 
     @Override
-    public void onEvent(PeripheralState event, Object obj) {
+    public void onStateChanged(PeripheralState event, Object obj) {
         mState = event;
         mEventObj = obj;
         runOnUiThread(this::updateUI);

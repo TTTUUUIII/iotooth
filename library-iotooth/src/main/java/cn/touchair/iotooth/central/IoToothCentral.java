@@ -140,10 +140,10 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         mRxFrameListener = listener;
     }
 
-    private synchronized void dispatchEvent(CentralState event, String addr) {
+    private synchronized void dispatchState(CentralState event, String addr) {
         mListeners.forEach(listener -> {
             try {
-                listener.onEvent(event, addr);
+                listener.onStateChanged(event, addr);
             } catch (Exception exception) {
                 Log.w(TAG, "Listener dead.");
             }
@@ -197,7 +197,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
                 Log.d(TAG, String.format("BluetoothDevice: {name: %s, address: %s} open gatt => ok.", device.getName(), device.getAddress()));
             }
             mGattHandlersMap.put(device.getAddress(), handler);
-            dispatchEvent(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
+            dispatchState(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
         } else {
             Log.d(TAG, "Unable open gatt");
         }
@@ -216,8 +216,8 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     }
 
     @Override
-    public void onEvent(CentralState event, @NonNull String address) {
-        dispatchEvent(event, address);
+    public void onStateChanged(CentralState event, @NonNull String address) {
+        dispatchState(event, address);
     }
 
     @Override

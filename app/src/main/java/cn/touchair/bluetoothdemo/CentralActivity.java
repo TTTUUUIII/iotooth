@@ -74,10 +74,10 @@ public class CentralActivity extends AppCompatActivity implements  CentralStateL
     }
 
     @Override
-    public void onEvent(CentralState event, @NonNull String address) {
+    public void onStateChanged(CentralState event, @NonNull String address) {
         CentralStateListener listener = mObservers.get(address);
         if (Objects.nonNull(listener)) {
-            listener.onEvent(event, address);
+            listener.onStateChanged(event, address);
         }
     }
 

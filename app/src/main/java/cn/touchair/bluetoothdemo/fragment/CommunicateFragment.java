@@ -81,7 +81,7 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
     }
 
     @Override
-    public void onEvent(CentralState event, @NonNull String address) {
+    public void onStateChanged(CentralState event, @NonNull String address) {
         mState = event;
         mH.post(this::updateUI);
     }

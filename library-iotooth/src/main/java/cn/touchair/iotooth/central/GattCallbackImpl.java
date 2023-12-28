@@ -180,7 +180,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         super.onReadRemoteRssi(gatt, rssi, status);
         String address = gatt.getDevice().getAddress();
         if (mListener == null) return;
-        mListener.onEvent(CentralState.RSSI_REPORTER, String.format("{address: \"%s\", rssi: \"%d\"}", address, rssi));
+        mListener.onStateChanged(CentralState.RSSI_REPORTER, String.format("{address: \"%s\", rssi: \"%d\"}", address, rssi));
     }
 
     @Override
@@ -198,7 +198,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     public void onServiceChanged(@NonNull BluetoothGatt gatt) {
         gatt.disconnect();
         mIsConnected = false;
-        mListener.onEvent(CentralState.DISCONNECTED, gatt.getDevice().getAddress());
+        mListener.onStateChanged(CentralState.DISCONNECTED, gatt.getDevice().getAddress());
         Log.i(TAG, "onServiceChanged");
     }
 
@@ -233,7 +233,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
 
     private void handleState(@NonNull CentralState newState, @Nullable String address) {
         mState = newState;
-        mListener.onEvent(mState, address);
+        mListener.onStateChanged(mState, address);
         Log.d(TAG, "Notify new state => " + ToothUtils.stateToString(mState));
     }
 
