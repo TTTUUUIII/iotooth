@@ -15,8 +15,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityPeripheralBinding;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
@@ -45,7 +47,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
         mPeripheral = new IoToothPeripheral.Builder(this, new PeripheralConfiguration("1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf"))
                 .setEventListener(this)
                 .build();
-        mController = new TransmitterController(mPeripheral, this);
+        mController = TransmitterController.create(mPeripheral, this);
         binding.mainLayout.sendBtn.setOnClickListener(this::onAction);
         binding.tggleBtn.setOnClickListener(this::onAction);
     }
@@ -64,7 +66,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
 
         if (id == R.id.send_btn) {
             String sendMsg = binding.mainLayout.messageEditText.getText().toString().trim();
-            if (sendMsg != null && !sendMsg.isEmpty()) {
+            if (!sendMsg.isEmpty()) {
                 mController.writeText(sendMsg);
             }
         }
@@ -118,8 +120,10 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
     }
 
     @Override
-    public void onStream(@Nullable String address, float progress, byte[] raw) {
-        /*Ignored*/
+    public void onStream(@Nullable String address, float progress, byte type, byte[] raw, int offset, int len) {
+        Log.d("DEBUG",
+                String.format(Locale.US, "onStream: {address=%s, progress=%f, dataType=%d}", address, progress, type)
+        );
     }
 }
 

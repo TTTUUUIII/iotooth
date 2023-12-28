@@ -11,14 +11,16 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
-import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.nio.charset.Charset;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 import cn.touchair.iotooth.GlobalConfig;
@@ -30,27 +32,19 @@ import cn.touchair.iotooth.util.ToothUtils;
 public class GattCallbackImpl extends BluetoothGattCallback {
 
     private static final String TAG = GattCallbackImpl.class.getSimpleName();
-    private CentralConfiguration mConfiguration;
+
+    private final byte[] mLock = new byte[0];
+    private final CentralConfiguration mConfiguration;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic mReadonlyCharacteristic;
     private BluetoothGattCharacteristic mWritableCharacteristic;
-    private CentralState mState = CentralState.OPENED_GATT;
     private CentralStateListener mListener;
+
+    private boolean mExecWriting = false;
     private volatile boolean mIsConnected = false;
-    private volatile long mRssiReportInterval = 5000L;
-    @SuppressLint("MissingPermission")
-    private Runnable mRssiReader = () -> {
-        while (mIsConnected) {
-            try {
-                mBluetoothGatt.readRemoteRssi();
-                SystemClock.sleep(mRssiReportInterval);
-            } catch (Exception e) {
-                Log.w(TAG, "Read rssi failed, thread exit.");
-                break;
-            }
-        }
-    };
-    private Logger mLogger = Logger.getLogger(GattCallbackImpl.class);
+
+    private final ConcurrentLinkedQueue<byte[]> mTxWaitQueue = new ConcurrentLinkedQueue<>();
+    private final Logger mLogger = Logger.getLogger(GattCallbackImpl.class);
 
     public GattCallbackImpl(@NonNull CentralConfiguration configuration, @NonNull CentralStateListener listener) {
         mConfiguration = configuration;
@@ -70,7 +64,6 @@ public class GattCallbackImpl extends BluetoothGattCallback {
                 mIsConnected = true;
                 mBluetoothGatt = gatt;
                 gatt.discoverServices();
-                startReportRssi();
                 break;
             case BluetoothGatt.STATE_CONNECTING:
                 break;
@@ -141,7 +134,16 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicWrite(gatt, characteristic, status);
-        Log.d(TAG, "onCharacteristicWrite");
+        if (mTxWaitQueue.isEmpty()) {
+            synchronized (mLock) {
+                mExecWriting = false;
+            }
+        } else {
+            byte[] next = mTxWaitQueue.poll();
+            if (next != null) {
+                writeCharacteristic(next);
+            }
+        }
     }
 
     @Override
@@ -180,7 +182,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         super.onReadRemoteRssi(gatt, rssi, status);
         String address = gatt.getDevice().getAddress();
         if (mListener == null) return;
-        mListener.onStateChanged(CentralState.RSSI_REPORTER, String.format("{address: \"%s\", rssi: \"%d\"}", address, rssi));
+        mListener.onStateChanged(CentralState.RSSI_REPORTER, String.format(Locale.US, "{address: \"%s\", rssi: \"%d\"}", address, rssi));
     }
 
     @Override
@@ -204,19 +206,20 @@ public class GattCallbackImpl extends BluetoothGattCallback {
 
     @SuppressLint("MissingPermission")
     public void send(@NonNull String msg) {
-        if (mBluetoothGatt != null && mWritableCharacteristic != null) {
-            mWritableCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-            mWritableCharacteristic.setValue(msg);
-            mBluetoothGatt.writeCharacteristic(mWritableCharacteristic);
-        }
+        send(msg.getBytes(Charset.defaultCharset()));
     }
 
     @SuppressLint("MissingPermission")
     public void send(@NonNull byte[] bytes) {
         if (mBluetoothGatt != null && mWritableCharacteristic != null) {
-            mWritableCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-            mWritableCharacteristic.setValue(bytes);
-            mBluetoothGatt.writeCharacteristic(mWritableCharacteristic);
+            synchronized (mLock) {
+                if (mExecWriting) {
+                    mTxWaitQueue.add(bytes);
+                } else {
+                    mExecWriting = true;
+                    writeCharacteristic(bytes);
+                }
+            }
         }
     }
 
@@ -231,14 +234,19 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         mBluetoothGatt = null;
     }
 
-    private void handleState(@NonNull CentralState newState, @Nullable String address) {
-        mState = newState;
-        mListener.onStateChanged(mState, address);
-        Log.d(TAG, "Notify new state => " + ToothUtils.stateToString(mState));
+    /**
+     *
+     * @hide
+     */
+    @SuppressLint("MissingPermission")
+    private void writeCharacteristic(byte[] data) {
+        mWritableCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+        mWritableCharacteristic.setValue(data);
+        mBluetoothGatt.writeCharacteristic(mWritableCharacteristic);
     }
 
-    private void startReportRssi() {
-//        new Thread(mRssiReader)
-//                .start();
+    private void handleState(@NonNull CentralState newState, @Nullable String address) {
+        mListener.onStateChanged(newState, address);
+        Log.d(TAG, "Notify new state => " + ToothUtils.stateToString(newState));
     }
 }

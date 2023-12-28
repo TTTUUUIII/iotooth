@@ -26,7 +26,6 @@ import cn.touchair.iotooth.central.IoToothCentral;
 import cn.touchair.iotooth.central.ScanResultCallback;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
 import cn.touchair.iotooth.util.TransmitterAble;
-import cn.touchair.iotooth.util.TransmitterController;
 
 public class CentralActivity extends AppCompatActivity implements  CentralStateListener {
     private static final String TAG = CentralActivity.class.getSimpleName();

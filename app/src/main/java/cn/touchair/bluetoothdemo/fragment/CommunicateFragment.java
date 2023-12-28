@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment;
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 
 import cn.touchair.bluetoothdemo.CentralActivity;
@@ -31,6 +32,7 @@ import cn.touchair.bluetoothdemo.databinding.FragmentCommunicateBinding;
 import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.central.CentralStateListener;
 import cn.touchair.iotooth.util.TransmitterController;
+import cn.touchair.iotooth.util.TransmitterControllerImpl;
 import cn.touchair.iotooth.util.TypeUtils;
 
 public class CommunicateFragment extends Fragment implements CentralStateListener, View.OnClickListener, TransmitterController.TransmitterCallback {
@@ -60,7 +62,7 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         mParent = (CentralActivity) context;
-        mController = new TransmitterController(mParent.getTransmitterCore(), this);
+        mController = TransmitterController.create(mParent.getTransmitterCore(), this);
     }
 
     private void connectTo() {
@@ -138,7 +140,9 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
     }
 
     @Override
-    public void onStream(@Nullable String address, float progress, byte[] raw) {
-
+    public void onStream(@Nullable String address, float progress, byte dataType, byte[] frame, int offset, int len) {
+        Log.d("DEBUG",
+                String.format(Locale.US, "onStream: {address=%s, progress=%f, dataType=%d}", address, progress, dataType)
+        );
     }
 }
