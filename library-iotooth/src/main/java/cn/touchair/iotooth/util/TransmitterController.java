@@ -78,6 +78,7 @@ public class TransmitterController implements RxFrameListener {
                     Log.d(TAG, "writeFrame: " + Arrays.toString(data));
                 }
                 mCore.send(address, generateDataFrame(i, data, validLen));
+                mCallback.onTxProgress(address, DATA_TYPE_TEXT, frameCount, i);
                 SystemClock.sleep(WRITE_WAIT_TIME_MILLISECOND);
                 position += validLen;
             }
@@ -120,7 +121,6 @@ public class TransmitterController implements RxFrameListener {
     @Override
     public void onFrame(int offset, byte[] frame, @Nullable String addr) {
 
-        Log.d("DEBUG", "onFrame: " + Arrays.toString(frame));
         RxPacket packet;
         if (addr == null) {
             packet = mRxContextMap.get("default");
@@ -134,7 +134,7 @@ public class TransmitterController implements RxFrameListener {
 
         assert packet != null;
 
-        packet.putFrame(frame);
+        packet.putFrame(addr, frame);
         if ((packet.type & DATA_TYPE_TEXT) == DATA_TYPE_TEXT) {
             if (packet.isEnd()) {
                 mCallback.onText(addr, packet.toText());
@@ -142,14 +142,14 @@ public class TransmitterController implements RxFrameListener {
         }
     }
 
-    private static class RxPacket {
+    private class RxPacket {
         int frameCount;
         int frameIndex = -1;
 
         byte type;
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-        void putFrame(byte[] frame) {
+        void putFrame(@Nullable String addr, byte[] frame) {
             byte[] temp = new byte[4];
             switch (frame[0]) {
                 case FRAME_TYPE_HEADER:
@@ -167,6 +167,7 @@ public class TransmitterController implements RxFrameListener {
                     try {
                         buffer.flush();
                     } catch (IOException ignored) {}
+                    mCallback.onRxProgress(addr, type, frameCount, frameIndex + 1);
                     break;
                 default:
             }
@@ -188,5 +189,14 @@ public class TransmitterController implements RxFrameListener {
     public interface TransmitterCallback {
         void onText(@Nullable String address, @NonNull String text);
         void onStream(@Nullable String address, float progress, byte[] raw);
+
+
+        default void onRxProgress(@Nullable String addr, int rxType, int total, int index) {
+            /*Do Nothing*/
+        }
+
+        default void onTxProgress(@Nullable String addr,  int txType, int total, int index) {
+            /*Do Nothing*/
+        }
     }
 }
