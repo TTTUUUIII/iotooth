@@ -141,8 +141,6 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
 
     @Override
     public void onStream(@Nullable String address, float progress, byte dataType, byte[] frame, int offset, int len) {
-        Log.d("DEBUG",
-                String.format(Locale.US, "onStream: {address=%s, progress=%f, dataType=%d}", address, progress, dataType)
-        );
+        /*Ignored*/
     }
 }

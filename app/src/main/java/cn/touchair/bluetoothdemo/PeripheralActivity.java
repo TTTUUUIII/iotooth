@@ -121,9 +121,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
 
     @Override
     public void onStream(@Nullable String address, float progress, byte type, byte[] raw, int offset, int len) {
-        Log.d("DEBUG",
-                String.format(Locale.US, "onStream: {address=%s, progress=%f, dataType=%d}", address, progress, type)
-        );
+        /*Ignored*/
     }
 }
 
