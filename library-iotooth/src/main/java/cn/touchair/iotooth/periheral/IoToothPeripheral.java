@@ -223,10 +223,10 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
                 .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
                 .addManufacturerData(menu,pra)
                 .setIncludeTxPowerLevel(true);
-        if (mConfiguration != null) {
-            dataBuilder.setIncludeDeviceName(true);
-            mAdapter.setName(mConfiguration.serviceLocalName);
-        }
+//        if (mConfiguration != null) {
+//            dataBuilder.setIncludeDeviceName(true);
+//            mAdapter.setName(mConfiguration.serviceLocalName);
+//        }
         BluetoothLeAdvertiser advertiser = mAdapter.getBluetoothLeAdvertiser();
         advertiser.startAdvertising(settings, dataBuilder.build(), this);
     }

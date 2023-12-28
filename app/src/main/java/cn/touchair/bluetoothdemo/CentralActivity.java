@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanFilter;
 import android.os.Bundle;
+import android.os.ParcelUuid;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -89,7 +90,8 @@ public class CentralActivity extends AppCompatActivity implements  CentralStateL
     }
 
     public void startScan(@NonNull ScanResultCallback callback) {
-        mCentral.scanWithDuration(1000 * 10, callback, new ScanFilter.Builder().setDeviceName("TOOTH").build());
+//        mCentral.scanWithDuration(1000 * 10, callback, new ScanFilter.Builder().setDeviceName("TOOTH").build());
+        mCentral.scanWithDuration(1000 * 10, callback, new ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString("1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf")).build());
     }
 
     public TransmitterAble getTransmitterCore() {
