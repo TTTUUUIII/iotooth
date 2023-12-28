@@ -63,7 +63,7 @@ public class TransmitterControllerImpl extends TransmitterController implements 
                     Log.d(TAG, "writeFrame: " + Arrays.toString(data));
                 }
                 core.send(address, generateDataFrame(i, data, validLen));
-                callback.onTxProgress(address, DATA_TYPE_TEXT, frameCount, i);
+                callback.onTxProgress(address, DATA_TYPE_TEXT, frameCount, i + 1);
                 position += validLen;
             }
         });
@@ -86,7 +86,7 @@ public class TransmitterControllerImpl extends TransmitterController implements 
                     if (readNumInBytes > 0) {
                         byte[] frame = generateDataFrame(frameIndex, data, (byte) readNumInBytes);
                         core.send(address, frame);
-                        callback.onTxProgress(address, dataType, frameCount, frameIndex);
+                        callback.onTxProgress(address, dataType, frameCount, frameIndex + 1);
                         frameIndex++;
                     }
                 }
