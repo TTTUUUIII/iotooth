@@ -166,9 +166,13 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
+        byte[] value = characteristic.getValue();
+        if (isExitNotify(value)) {
+            close();
+        }
         if (mListener == null) return;
         String address = gatt.getDevice().getAddress();
-        mListener.onMessage(0, characteristic.getValue(), address);
+        mListener.onMessage(0, value, address);
     }
 
     @Override
@@ -248,5 +252,16 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     private void handleState(@NonNull CentralState newState, @Nullable String address) {
         mListener.onStateChanged(newState, address);
         Log.d(TAG, "Notify new state => " + ToothUtils.stateToString(newState));
+    }
+
+    private boolean isExitNotify(byte[] value) {
+        boolean ret = true;
+        for (byte i : value) {
+            if (i != -1) {
+                ret = false;
+                break;
+            }
+        }
+        return ret;
     }
 }

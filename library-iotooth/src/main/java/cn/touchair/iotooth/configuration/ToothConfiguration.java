@@ -11,6 +11,7 @@ import java.util.UUID;
 
 public abstract class ToothConfiguration {
     public static final UUID CLIENT_CHARACTERISTIC_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    public static final byte[] PERIPHERAL_CLOSED = new byte[]{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
     public static BluetoothGattDescriptor getClientCharacteristicConfigurationDescriptor() {
         BluetoothGattDescriptor descriptor = new BluetoothGattDescriptor(
                 CLIENT_CHARACTERISTIC_CONFIG,

@@ -47,7 +47,6 @@ public class CentralActivity extends AppCompatActivity implements  CentralStateL
             FindRemoteFragment findRemoteFragment = FindRemoteFragment.newInstance();
             mFragmentManager.beginTransaction()
                     .add(R.id.fragment_container, findRemoteFragment, FindRemoteFragment.class.getCanonicalName())
-                    .addToBackStack(null)
                     .commit();
         }
     }

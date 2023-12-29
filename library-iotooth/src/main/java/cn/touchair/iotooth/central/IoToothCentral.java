@@ -109,6 +109,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         GattCallbackImpl handler = mGattHandlersMap.remove(addr);
         if (handler != null) {
             handler.close();
+            mGattHandlersMap.remove(addr);
         }
     }
 

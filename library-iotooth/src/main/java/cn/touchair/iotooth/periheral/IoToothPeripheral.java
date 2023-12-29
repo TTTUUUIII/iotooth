@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 
 import cn.touchair.iotooth.GlobalConfig;
+import cn.touchair.iotooth.central.IoToothCentral;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.configuration.ToothConfiguration;
 import cn.touchair.iotooth.util.RxFrameListener;
@@ -176,11 +177,16 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     @SuppressLint("MissingPermission")
     public void disable() {
         stopAdvertising();
-        if (Objects.nonNull(mGattServer)) {
+        if (Objects.nonNull(mGattServer)) {;
+            send(ToothConfiguration.PERIPHERAL_CLOSED);
+            mGattServer.cancelConnection(mConnectedDevice);
             mGattServer.clearServices();
             mGattServer.close();
             mGattServer = null;
+            mReadonlyCharacteristic = null;
+            mWritableCharacteristic = null;
         }
+        System.gc();
         dispatchState(PeripheralState.DISCONNECTED, null);
     }
 
