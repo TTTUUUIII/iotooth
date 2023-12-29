@@ -182,11 +182,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
             mGattServer.cancelConnection(mConnectedDevice);
             mGattServer.clearServices();
             mGattServer.close();
-            mGattServer = null;
-            mReadonlyCharacteristic = null;
-            mWritableCharacteristic = null;
         }
-        System.gc();
         dispatchState(PeripheralState.DISCONNECTED, null);
     }
 
