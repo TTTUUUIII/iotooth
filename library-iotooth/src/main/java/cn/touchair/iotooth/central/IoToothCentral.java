@@ -218,6 +218,12 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
 
     @Override
     public void onStateChanged(CentralState event, @NonNull String address) {
+        if (event == CentralState.DISCONNECTED) {
+            GattCallbackImpl handler = mGattHandlersMap.get(address);
+            if (handler != null) {
+                mGattHandlersMap.remove(address);
+            }
+        }
         dispatchState(event, address);
     }
 
