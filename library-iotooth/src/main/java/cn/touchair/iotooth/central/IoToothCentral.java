@@ -24,6 +24,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.jetbrains.annotations.TestOnly;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -104,6 +106,17 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         scanService(filter);
         mH.sendEmptyMessageDelayed(MSG_WHAT_STOP_SCAN,
                 sec);
+    }
+
+    @TestOnly
+    public void scanNeverStop(long sec, ScanResultCallback callback, ScanFilter filter) {
+        mScanCallback = callback;
+        scanService(filter);
+    }
+
+    public void stopScan() {
+        stopScanService(true);
+        mScanCallback = null;
     }
 
     public void disconnect(@NonNull String addr) {
