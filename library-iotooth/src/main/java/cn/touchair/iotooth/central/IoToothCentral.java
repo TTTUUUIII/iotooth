@@ -19,7 +19,6 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.ParcelUuid;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -29,7 +28,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.configuration.CentralConfiguration;
@@ -38,8 +39,6 @@ import cn.touchair.iotooth.util.TransmitterAble;
 
 public class IoToothCentral extends ScanCallback implements CentralStateListener, TransmitterAble {
     private static final String TAG = IoToothCentral.class.getSimpleName();
-
-    private final byte[] mLock = new byte[0];
     private static final int MSG_WHAT_STOP_SCAN = 0;
     private final Context mContext;
     private final CentralConfiguration mConfiguration;
@@ -62,7 +61,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         }
     };
 
-    private final HashMap<String, GattCallbackImpl> mGattHandlersMap = new HashMap<>();
+    private final Map<String, GattCallbackImpl> mGattHandlersMap = new ConcurrentHashMap<>();
 
     @SuppressLint("MissingPermission")
     private IoToothCentral(@NonNull Context context, @Nullable CentralStateListener listener, @NonNull CentralConfiguration configuration) {
@@ -108,40 +107,32 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     }
 
     public void disconnect(@NonNull String addr) {
-        synchronized (mLock) {
-            GattCallbackImpl handler = mGattHandlersMap.remove(addr);
-            if (handler != null) {
-                handler.close();
-            }
+        GattCallbackImpl handler = mGattHandlersMap.remove(addr);
+        if (handler != null) {
+            handler.close();
         }
     }
 
     public void disconnectAll() {
-        synchronized (mLock) {
-            mGattHandlersMap.forEach((address, handler) -> {
-                handler.close();
-            });
-            mGattHandlersMap.clear();
-            mListeners.clear();
-        }
+        mGattHandlersMap.forEach((address, handler) -> {
+            handler.close();
+        });
+        mGattHandlersMap.clear();
+        mListeners.clear();
     }
 
     public void send(@NonNull String address, String msg) {
-        synchronized (mLock) {
-            GattCallbackImpl handler = mGattHandlersMap.get(address);
-            if (handler != null) {
-                handler.send(msg);
-            }
+        GattCallbackImpl handler = mGattHandlersMap.get(address);
+        if (handler != null) {
+            handler.send(msg);
         }
     }
 
     @Override
     public void send(@Nullable String address, byte[] data) {
-        synchronized (mLock) {
-            GattCallbackImpl handler = mGattHandlersMap.get(address);
-            if (handler != null) {
-                handler.send(data);
-            }
+        GattCallbackImpl handler = mGattHandlersMap.get(address);
+        if (handler != null) {
+            handler.send(data);
         }
     }
 
@@ -206,10 +197,8 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
             if (GlobalConfig.DEBUG) {
                 Log.d(TAG, String.format("BluetoothDevice: {name: %s, address: %s} open gatt => ok.", device.getName(), device.getAddress()));
             }
-            synchronized (mLock) {
-                mGattHandlersMap.put(device.getAddress(), handler);
-                dispatchState(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
-            }
+            mGattHandlersMap.put(device.getAddress(), handler);
+            dispatchState(CentralState.OPENED_GATT, gatt.getDevice().getAddress());
         } else {
             Log.d(TAG, "Unable open gatt");
         }
@@ -230,11 +219,9 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     @Override
     public void onStateChanged(CentralState event, @NonNull String address) {
         if (event == CentralState.DISCONNECTED) {
-            synchronized (mLock) {
-                GattCallbackImpl handler = mGattHandlersMap.get(address);
-                if (handler != null) {
-                    mGattHandlersMap.remove(address);
-                }
+            GattCallbackImpl handler = mGattHandlersMap.get(address);
+            if (handler != null) {
+                mGattHandlersMap.remove(address);
             }
         }
         dispatchState(event, address);

@@ -177,11 +177,9 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     @SuppressLint("MissingPermission")
     public void disable() {
         stopAdvertising();
-        if (Objects.nonNull(mGattServer)) {;
+        if (Objects.nonNull(mGattServer) && Objects.nonNull(mConnectedDevice)) {;
             send(ToothConfiguration.PERIPHERAL_CLOSED);
             mGattServer.cancelConnection(mConnectedDevice);
-            mGattServer.clearServices();
-            mGattServer.close();
         }
         dispatchState(PeripheralState.DISCONNECTED, null);
     }
@@ -240,7 +238,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
 
     @SuppressLint("MissingPermission")
     public void send(@Nullable String address, byte[] bytes) {
-        if (Objects.nonNull(mGattServer) && Objects.nonNull(mReadonlyCharacteristic)) {
+        if (Objects.nonNull(mGattServer) && Objects.nonNull(mReadonlyCharacteristic) && Objects.nonNull(mConnectedDevice)) {
             mReadonlyCharacteristic.setValue(bytes);
             boolean indicate = (mReadonlyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == BluetoothGattCharacteristic.PROPERTY_INDICATE;
             mGattServer.notifyCharacteristicChanged(mConnectedDevice, mReadonlyCharacteristic, indicate);

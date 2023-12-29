@@ -12,7 +12,32 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
-
+        <LinearLayout
+            android:background="#cfcfcf"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RX:" />
+            <TextView
+                android:textColor="#0000ff"
+                android:id="@+id/rx_progress_text_view"
+                android:layout_width="55dp"
+                android:layout_height="wrap_content"
+                android:text="-"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TX:" />
+            <TextView
+                android:textColor="#00ff00"
+                android:id="@+id/tx_progress_text_view"
+                android:layout_width="55dp"
+                android:text="-"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
         <TextView
             android:id="@+id/state_text_view"
             android:padding="5dp"
