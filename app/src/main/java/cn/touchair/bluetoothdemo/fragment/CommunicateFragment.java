@@ -20,6 +20,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.Fragment;
 
+import com.google.gson.Gson;
+
 import java.io.ByteArrayOutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -29,6 +31,7 @@ import java.util.Objects;
 import cn.touchair.bluetoothdemo.CentralActivity;
 import cn.touchair.bluetoothdemo.R;
 import cn.touchair.bluetoothdemo.databinding.FragmentCommunicateBinding;
+import cn.touchair.bluetoothdemo.entity.Card;
 import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.central.CentralStateListener;
 import cn.touchair.iotooth.util.TransmitterController;
@@ -126,7 +129,14 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
             final String msg = binding.mainLayout.messageEditText.getText().toString().trim();
             if (!msg.isEmpty() && Objects.nonNull(mRemote)) {
                 String address = mRemote.getAddress();
-                mController.writeText(address, msg);
+//                mController.writeText(address, msg);
+                Card card = new Card.Builder("Google", "David")
+                        .setPosition("Application engineer")
+                        .setEmail("david@gmail.com")
+                        .setMailingAddress("Longwood STHL 1ZZ, St Helena, Ascension and Tristan da Cunha.")
+                        .setTelephone("+1-555-009-2937")
+                        .build();
+                mController.writeText(address, new Gson().toJson(card));
             }
         }
     }
@@ -142,5 +152,27 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
     @Override
     public void onStream(@Nullable String address, float progress, byte dataType, byte[] frame, int offset, int len) {
         /*Ignored*/
+    }
+
+    @Override
+    public void onRxProgress(@Nullable String addr, int rxType, int total, int index) {
+        int progress = (int) (((float) index / total) * 100);
+        binding.mainLayout.rxProgressTextView.setText(String.format(Locale.US, "%d%%", progress));
+        if (progress == 100) {
+            mH.postDelayed(() -> {
+                binding.mainLayout.rxProgressTextView.setText("-");
+            }, 300);
+        }
+    }
+
+    @Override
+    public void onTxProgress(@Nullable String addr, int txType, int total, int index) {
+        int progress = (int) (((float) index / total) * 100);
+        binding.mainLayout.txProgressTextView.setText(String.format(Locale.US, "%d%%", progress));
+        if (progress == 100) {
+            mH.postDelayed(() -> {
+                binding.mainLayout.txProgressTextView.setText("-");
+            }, 300);
+        }
     }
 }

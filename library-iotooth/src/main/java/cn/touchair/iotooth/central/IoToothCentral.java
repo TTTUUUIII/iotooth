@@ -16,6 +16,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -263,5 +264,9 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         public IoToothCentral build() {
             return new IoToothCentral(context, listener, configuration);
         }
+    }
+
+    public static boolean hasSystemFeature(Context ctx) {
+        return ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
     }
 }

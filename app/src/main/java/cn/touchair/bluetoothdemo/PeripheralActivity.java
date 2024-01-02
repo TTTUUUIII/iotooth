@@ -12,8 +12,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+
+import com.google.gson.Gson;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -21,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityPeripheralBinding;
+import cn.touchair.bluetoothdemo.entity.Card;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.periheral.IoToothPeripheral;
 import cn.touchair.iotooth.periheral.PeriheralStateListener;
@@ -36,6 +41,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
     private PeripheralState mState = PeripheralState.DISCONNECTED;
     private Object mEventObj = null;
     private boolean isEnable = false;
+    private final Handler mH = new Handler(Looper.getMainLooper());
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +73,14 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
         if (id == R.id.send_btn) {
             String sendMsg = binding.mainLayout.messageEditText.getText().toString().trim();
             if (!sendMsg.isEmpty()) {
-                mController.writeText(sendMsg);
+//                mController.writeText(sendMsg);
+                Card card = new Card.Builder("Google", "David")
+                        .setPosition("Application engineer")
+                        .setEmail("david@gmail.com")
+                        .setMailingAddress("Longwood STHL 1ZZ, St Helena, Ascension and Tristan da Cunha.")
+                        .setTelephone("+1-555-009-2937")
+                        .build();
+                mController.writeText(new Gson().toJson(card));
             }
         }
     }
@@ -122,6 +135,28 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
     @Override
     public void onStream(@Nullable String address, float progress, byte type, byte[] raw, int offset, int len) {
         /*Ignored*/
+    }
+
+    @Override
+    public void onRxProgress(@Nullable String addr, int rxType, int total, int index) {
+        int progress = (int) (((float) index / total) * 100);
+        binding.mainLayout.rxProgressTextView.setText(String.format(Locale.US, "%d%%", progress));
+        if (progress == 100) {
+            mH.postDelayed(() -> {
+                binding.mainLayout.rxProgressTextView.setText("-");
+            }, 300);
+        }
+    }
+
+    @Override
+    public void onTxProgress(@Nullable String addr, int txType, int total, int index) {
+        int progress = (int) (((float) index / total) * 100);
+        binding.mainLayout.txProgressTextView.setText(String.format(Locale.US, "%d%%", progress));
+        if (progress == 100) {
+            mH.postDelayed(() -> {
+                binding.mainLayout.txProgressTextView.setText("-");
+            }, 300);
+        }
     }
 }
 

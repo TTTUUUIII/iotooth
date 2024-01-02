@@ -20,6 +20,7 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.ParcelUuid;
 import android.util.Log;
 
@@ -332,5 +333,9 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         public IoToothPeripheral build() {
             return new IoToothPeripheral(context, listener, configuration);
         }
+    }
+
+    public static boolean hasSystemFeature(Context ctx) {
+        return ctx.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
     }
 }
