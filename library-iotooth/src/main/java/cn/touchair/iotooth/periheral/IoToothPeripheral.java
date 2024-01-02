@@ -54,6 +54,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
 
     private RxFrameListener mRxFrameListener;
     private boolean mIsAdverting = false;
+    private boolean mIsManualAdvertising = false;
 
     private BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
         @Override
@@ -68,7 +69,9 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
                 case BluetoothGattServer.STATE_DISCONNECTED:
                     mConnectedDevice = null;
                     dispatchState(PeripheralState.DISCONNECTED, null);
-                    startAdverting();
+                    if (!mIsManualAdvertising) {
+                        startAdverting();
+                    }
                     break;
                 case BluetoothGattServer.STATE_CONNECTING:
                     dispatchState(PeripheralState.CONNECTING, null);
@@ -195,6 +198,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     @SuppressLint("MissingPermission")
     private void startAdverting() {
         if (mIsAdverting) return;
+        mIsManualAdvertising = false;
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
                 .setConnectable(true)
                 .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
@@ -214,6 +218,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     @SuppressLint("MissingPermission")
     private void startAdvertingWithPram(int menu,byte [] pra) {
         if (mIsAdverting) return;
+        mIsManualAdvertising = true;
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
                 .setConnectable(true)
                 .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
