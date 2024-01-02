@@ -109,7 +109,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     }
 
     @TestOnly
-    public void scanNeverStop(long sec, ScanResultCallback callback, ScanFilter filter) {
+    public void scanNeverStop( ScanResultCallback callback, ScanFilter filter) {
         mScanCallback = callback;
         scanService(filter);
     }
