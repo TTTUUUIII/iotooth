@@ -8,4 +8,6 @@ package cn.touchair.iotooth.periheral;
 public interface PeriheralStateListener {
     void onStateChanged(PeripheralState state, Object obj);
     void  onMessage(int offset, byte[] data);
+
+    void onError(PeripheralErrorState errorState);
 }

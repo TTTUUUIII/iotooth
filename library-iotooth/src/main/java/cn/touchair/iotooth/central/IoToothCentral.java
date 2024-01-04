@@ -246,6 +246,11 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         dispatchMessage(offset, data, address);
     }
 
+    @Override
+    public void onError(CentralErrorState errorState) {
+
+    }
+
     public static class Builder {
         private Context context;
         private CentralConfiguration configuration;

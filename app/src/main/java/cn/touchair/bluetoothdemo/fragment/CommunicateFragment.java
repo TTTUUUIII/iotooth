@@ -129,14 +129,14 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
             final String msg = binding.mainLayout.messageEditText.getText().toString().trim();
             if (!msg.isEmpty() && Objects.nonNull(mRemote)) {
                 String address = mRemote.getAddress();
-//                mController.writeText(address, msg);
-                Card card = new Card.Builder("Google", "David")
-                        .setPosition("Application engineer")
-                        .setEmail("david@gmail.com")
-                        .setMailingAddress("Longwood STHL 1ZZ, St Helena, Ascension and Tristan da Cunha.")
-                        .setTelephone("+1-555-009-2937")
-                        .build();
-                mController.writeText(address, new Gson().toJson(card));
+                mController.writeText(address, msg);
+//                Card card = new Card.Builder("Google", "David")
+//                        .setPosition("Application engineer")
+//                        .setEmail("david@gmail.com")
+//                        .setMailingAddress("Longwood STHL 1ZZ, St Helena, Ascension and Tristan da Cunha.")
+//                        .setTelephone("+1-555-009-2937")
+//                        .build();
+//                mController.writeText(address, new Gson().toJson(card));
             }
         }
     }

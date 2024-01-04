@@ -31,7 +31,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.central.IoToothCentral;
@@ -44,18 +47,17 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     private static final String TAG = IoToothPeripheral.class.getSimpleName();
     private Context mContext;
     private BluetoothAdapter mAdapter;
-    private List<PeriheralStateListener> mListeners = new ArrayList<>();
+    private List<PeriheralStateListener> mListeners = new CopyOnWriteArrayList<>();
     private PeripheralConfiguration mConfiguration;
     private BluetoothManager mBluetoothManager;
     private BluetoothGattServer mGattServer;
-
-    private BluetoothDevice mConnectedDevice;
     private BluetoothGattCharacteristic mReadonlyCharacteristic;
     private BluetoothGattCharacteristic mWritableCharacteristic;
 
     private RxFrameListener mRxFrameListener;
     private boolean mIsAdverting = false;
     private boolean mIsManualAdvertising = false;
+    private final Map<String, BluetoothDevice> mConnectedDevices = new ConcurrentHashMap<>();
 
     private BluetoothGattServerCallback mGattServerCallback = new BluetoothGattServerCallback() {
         @Override
@@ -63,12 +65,12 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
             super.onConnectionStateChange(device, status, newState);
             switch (newState) {
                 case BluetoothGattServer.STATE_CONNECTED:
-                    mConnectedDevice = device;
+                    mConnectedDevices.put(device.getAddress(), device);
                     dispatchState(PeripheralState.CONNECTED, device.getAddress());
                     stopAdvertising();
                     break;
                 case BluetoothGattServer.STATE_DISCONNECTED:
-                    mConnectedDevice = null;
+                    mConnectedDevices.remove(device.getAddress());
                     dispatchState(PeripheralState.DISCONNECTED, null);
                     if (!mIsManualAdvertising) {
                         startAdverting();
@@ -180,11 +182,13 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
 
     @SuppressLint("MissingPermission")
     public void disable() {
-        stopAdvertising();
-        if (Objects.nonNull(mGattServer) && Objects.nonNull(mConnectedDevice)) {;
-            send(ToothConfiguration.PERIPHERAL_CLOSED);
-            mGattServer.cancelConnection(mConnectedDevice);
+        if (Objects.nonNull(mGattServer)) {;
+            mConnectedDevices.forEach((address, device) -> {
+                send(address, ToothConfiguration.PERIPHERAL_CLOSED);
+            });
+            mGattServer.clearServices();
         }
+        stopAdvertising();
         dispatchState(PeripheralState.DISCONNECTED, null);
     }
 
@@ -238,26 +242,22 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     }
 
     @SuppressLint("MissingPermission")
-    public void send(byte[] bytes) {
-        send(null, bytes);
-    }
-
-    @SuppressLint("MissingPermission")
     public void send(@Nullable String address, byte[] bytes) {
-        if (Objects.nonNull(mGattServer) && Objects.nonNull(mReadonlyCharacteristic) && Objects.nonNull(mConnectedDevice)) {
-            mReadonlyCharacteristic.setValue(bytes);
-            boolean indicate = (mReadonlyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == BluetoothGattCharacteristic.PROPERTY_INDICATE;
-            mGattServer.notifyCharacteristicChanged(mConnectedDevice, mReadonlyCharacteristic, indicate);
+        if (Objects.nonNull(mGattServer) && Objects.nonNull(mReadonlyCharacteristic)) {
+            BluetoothDevice device = mConnectedDevices.get(address);
+            if (device != null) {
+                mReadonlyCharacteristic.setValue(bytes);
+                boolean indicate = (mReadonlyCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_INDICATE) == BluetoothGattCharacteristic.PROPERTY_INDICATE;
+                mGattServer.notifyCharacteristicChanged(device, mReadonlyCharacteristic, indicate);
+            } else {
+                Log.w(TAG, "Couldn't, send msg device " + address + " not exist.");
+            }
         }
     }
 
     @Override
     public void setRxFrameListener(@Nullable RxFrameListener listener) {
         mRxFrameListener = listener;
-    }
-
-    public void send(String msg) {
-        send(msg.getBytes(StandardCharsets.UTF_8));
     }
 
     @SuppressLint("MissingPermission")
@@ -286,16 +286,37 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     @Override
     public void onStartFailure(int errorCode) {
         super.onStartFailure(errorCode);
+        dispatchErrorState(PeripheralErrorState.ERROR_ADVERTISE);
         Log.e(TAG, "Failed to start advertising, errorCode=" + errorCode);
     }
 
     private void dispatchState(@NonNull PeripheralState event, Object obj) {
+        ArrayList<PeriheralStateListener> deadListeners = new ArrayList<>();
         mListeners.forEach(listener -> {
             try {
                 listener.onStateChanged(event, obj);
             } catch (Exception e) {
                 Log.w(TAG, "Listener dead.");
+                deadListeners.add(listener);
             }
+        });
+        deadListeners.forEach(deadListener -> {
+            mListeners.remove(deadListener);
+        });
+    }
+
+    private void dispatchErrorState(PeripheralErrorState errorState) {
+        ArrayList<PeriheralStateListener> deadListeners = new ArrayList<>();
+        mListeners.forEach(listener -> {
+            try {
+                listener.onError(errorState);
+            } catch (Exception e) {
+                Log.w(TAG, "Listener dead.");
+                deadListeners.add(listener);
+            }
+        });
+        deadListeners.forEach(deadListener -> {
+            mListeners.remove(deadListener);
         });
     }
 
@@ -306,12 +327,17 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         if (Objects.nonNull(mRxFrameListener)) {
             mRxFrameListener.onFrame(offset, data, null);
         }
+        ArrayList<PeriheralStateListener> deadListeners = new ArrayList<>();
         mListeners.forEach(listener -> {
             try {
                 listener.onMessage(offset, data);
             } catch (Exception e) {
                 Log.w(TAG, "Listener dead.");
+                deadListeners.add(listener);
             }
+        });
+        deadListeners.forEach(deadListener -> {
+            mListeners.remove(deadListener);
         });
     }
 

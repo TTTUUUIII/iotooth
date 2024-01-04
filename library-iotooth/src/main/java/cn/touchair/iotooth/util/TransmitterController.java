@@ -36,10 +36,6 @@ public abstract class TransmitterController {
     public static TransmitterController create(TransmitterAble core, TransmitterCallback callback) {
         return new TransmitterControllerImpl(core, callback);
     }
-
-    public void writeText(String text) {
-        writeText(null, text);
-    }
     public abstract void writeText(@Nullable String address, String text);
     public void writeFile(File file, byte dataType) {
         writeFile(null, file, dataType);
