@@ -15,21 +15,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.ArraySet;
-import android.util.Log;
 import android.view.View;
 
-import com.google.gson.Gson;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityPeripheralBinding;
-import cn.touchair.bluetoothdemo.entity.Card;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.periheral.IoToothPeripheral;
 import cn.touchair.iotooth.periheral.PeriheralStateListener;
@@ -82,15 +74,6 @@ public class PeripheralActivity extends AppCompatActivity implements PeriheralSt
                 mConnectedDevices.forEach(address -> {
                     mController.writeText(address, sendMsg);
                 });
-//                Card card = new Card.Builder("Google", "David")
-//                        .setPosition("Application engineer")
-//                        .setEmail("david@gmail.com")
-//                        .setMailingAddress("Longwood STHL 1ZZ, St Helena, Ascension and Tristan da Cunha.")
-//                        .setTelephone("+1-555-009-2937")
-//                        .build();
-//                mConnectedDevices.forEach(address -> {
-//                    mController.writeText(address, new Gson().toJson(card));
-//                });
             }
         }
     }

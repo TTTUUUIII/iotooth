@@ -31,13 +31,10 @@ import java.util.Objects;
 import cn.touchair.bluetoothdemo.CentralActivity;
 import cn.touchair.bluetoothdemo.R;
 import cn.touchair.bluetoothdemo.databinding.FragmentCommunicateBinding;
-import cn.touchair.bluetoothdemo.entity.Card;
+import cn.touchair.iotooth.central.CentralErrorState;
 import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.central.CentralStateListener;
 import cn.touchair.iotooth.util.TransmitterController;
-import cn.touchair.iotooth.util.TransmitterControllerImpl;
-import cn.touchair.iotooth.util.TypeUtils;
-
 public class CommunicateFragment extends Fragment implements CentralStateListener, View.OnClickListener, TransmitterController.TransmitterCallback {
     public static String ARG_KEY_CONNECT_TO = "connectTo";
     private FragmentCommunicateBinding binding;
@@ -111,6 +108,11 @@ public class CommunicateFragment extends Fragment implements CentralStateListene
     @Override
     public void onMessage(int offset, byte[] data, @NonNull String address) {
         /*Ignored*/
+    }
+
+    @Override
+    public void onError(CentralErrorState errorState) {
+
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.util.Objects;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityCentralBinding;
 import cn.touchair.bluetoothdemo.fragment.FindRemoteFragment;
+import cn.touchair.iotooth.central.CentralErrorState;
 import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.central.CentralStateListener;
 import cn.touchair.iotooth.central.IoToothCentral;
@@ -85,6 +86,11 @@ public class CentralActivity extends AppCompatActivity implements  CentralStateL
         if (Objects.nonNull(listener)) {
             listener.onMessage(offset, data, address);
         }
+    }
+
+    @Override
+    public void onError(CentralErrorState errorState) {
+
     }
 
     public void startScan(@NonNull ScanResultCallback callback) {
