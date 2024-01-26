@@ -34,15 +34,15 @@ import cn.touchair.iotooth.central.ScanResultCallback;
 public class FindRemoteFragment extends Fragment implements ScanResultCallback, View.OnClickListener {
     private FragmentFindRemoteBinding binding;
     private CentralActivity mParent;
-    private List<ScanResult> mRemoteList = new ArrayList<>();
-    private RemoteViewAdapter mAdapter = new RemoteViewAdapter();
+    private final List<ScanResult> mRemoteList = new ArrayList<>();
+    private final RemoteViewAdapter mAdapter = new RemoteViewAdapter();
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         binding = FragmentFindRemoteBinding.inflate(inflater, container, false);
-        binding.scanBtn.setOnClickListener(this::onClick);
+        binding.scanBtn.setOnClickListener(this);
         binding.recyclerView.setLayoutManager(new LinearLayoutManager(requireActivity()));
         binding.recyclerView.setAdapter(mAdapter);
         ActionBar actionBar = mParent.getSupportActionBar();
@@ -114,7 +114,7 @@ public class FindRemoteFragment extends Fragment implements ScanResultCallback, 
     }
 
     private class RemoteViewHolder extends RecyclerView.ViewHolder {
-        private ItemRemoteViewBinding itemBinding;
+        private final ItemRemoteViewBinding itemBinding;
         public RemoteViewHolder(@NonNull ItemRemoteViewBinding itemBinding) {
             super(itemBinding.getRoot());
             this.itemBinding = itemBinding;
