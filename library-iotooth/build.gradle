@@ -51,7 +51,7 @@ afterEvaluate {
             release(MavenPublication) {
                 from components.release
                 groupId = 'com.github.TTTUUUIII'
-                artifactId = 'cn.touchair.iotooth'
+                artifactId = 'iotooth-for-android'
                 version = '1.0.0'
             }
         }
