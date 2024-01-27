@@ -170,7 +170,7 @@ mConnectedDevices.forEach(address -> {
 | send(String address, byte[] data)                         | 发送消息           |     |
 | send(String address, String text)                         | 发送消息           |     |
 
-**IoToothPeripheral**
+**`IoToothPeripheral`**
 
 | 接口                                                | 说明                       | 备注 |
 |:---------------------------------------------------|:---------------------------|:----|
@@ -180,7 +180,7 @@ mConnectedDevices.forEach(address -> {
 | addEventListener(PeripheralStateListener listener) | 注册事件处理器                |     |
 | send(String address, byte[] data)                  | 发送消息                    |      |
 
-**TransmitterController**
+**`TransmitterController`**
 
 | 接口                                                           | 说明              | 备注      |
 |:--------------------------------------------------------------|:-----------------|:---------|
