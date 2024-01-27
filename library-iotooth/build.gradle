@@ -3,6 +3,8 @@ plugins {
     id "maven-publish"
 }
 
+group = 'com.github.TTTUUUIII'
+
 android {
     namespace 'cn.touchair.iotooth'
     compileSdk 33
@@ -31,31 +33,6 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-    }
-}
-
-
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                groupId = "cn.touchair"
-                artifactId = "iotooth"
-                version = "1.0.0"
-
-                from components.release
-            }
-        }
-        repositories {
-            maven {
-                credentials {
-                    username = "TTTUUUIII"
-                    password = "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"
-                }
-
-                url = "https://maven.pkg.github.com/TTTUUUIII/iotooth-for-android"
-            }
-        }
     }
 }
 
