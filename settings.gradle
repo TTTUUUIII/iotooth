@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "iotooth"
-include ':library-iotooth'
-include ':app'
+rootProject.name = "iotooth-for-android"
+include ':IoTooth'
+include ':Test'
