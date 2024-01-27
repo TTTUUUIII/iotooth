@@ -24,12 +24,12 @@ import java.util.Set;
 import cn.touchair.bluetoothdemo.databinding.ActivityPeripheralBinding;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.periheral.IoToothPeripheral;
-import cn.touchair.iotooth.periheral.PeriheralStateListener;
+import cn.touchair.iotooth.periheral.PeripheralStateListener;
 import cn.touchair.iotooth.periheral.PeripheralErrorState;
 import cn.touchair.iotooth.periheral.PeripheralState;
 import cn.touchair.iotooth.util.TransmitterController;
 
-public class PeripheralActivity extends AppCompatActivity implements PeriheralStateListener, TransmitterController.TransmitterCallback {
+public class PeripheralActivity extends AppCompatActivity implements PeripheralStateListener, TransmitterController.TransmitterCallback {
     private IoToothPeripheral mPeripheral;
     private TransmitterController mController;
     private ActivityPeripheralBinding binding;

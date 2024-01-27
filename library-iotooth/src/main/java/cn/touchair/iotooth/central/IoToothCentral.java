@@ -98,15 +98,15 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         openGatt(remote);
     }
 
-    public void scanWithDuration(long sec, ScanResultCallback callback) {
-        scanWithDuration(sec, callback, null);
+    public void scanWithDuration(long mills, ScanResultCallback callback) {
+        scanWithDuration(mills, callback, null);
     }
 
-    public void scanWithDuration(long sec, ScanResultCallback callback, ScanFilter filter) {
+    public void scanWithDuration(long mills, ScanResultCallback callback, ScanFilter filter) {
         mScanCallback = callback;
         scanService(filter);
         mH.sendEmptyMessageDelayed(MSG_WHAT_STOP_SCAN,
-                sec);
+                mills);
     }
 
     @TestOnly

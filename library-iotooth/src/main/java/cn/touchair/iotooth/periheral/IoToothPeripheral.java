@@ -27,7 +27,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import cn.touchair.iotooth.GlobalConfig;
-import cn.touchair.iotooth.central.IoToothCentral;
 import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.configuration.ToothConfiguration;
 import cn.touchair.iotooth.util.RxFrameListener;
@@ -47,7 +45,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     private static final String TAG = IoToothPeripheral.class.getSimpleName();
     private Context mContext;
     private BluetoothAdapter mAdapter;
-    private List<PeriheralStateListener> mListeners = new CopyOnWriteArrayList<>();
+    private List<PeripheralStateListener> mListeners = new CopyOnWriteArrayList<>();
     private PeripheralConfiguration mConfiguration;
     private BluetoothManager mBluetoothManager;
     private BluetoothGattServer mGattServer;
@@ -147,7 +145,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     };
 
     @SuppressLint("MissingPermission")
-    private   IoToothPeripheral(@NonNull Context ctx, @Nullable PeriheralStateListener listener, @NonNull PeripheralConfiguration configuration) {
+    private   IoToothPeripheral(@NonNull Context ctx, @Nullable PeripheralStateListener listener, @NonNull PeripheralConfiguration configuration) {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(configuration);
         mContext = ctx;
@@ -162,12 +160,12 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         }
     }
 
-    public void addEventListener(@NonNull PeriheralStateListener listener) {
+    public void addEventListener(@NonNull PeripheralStateListener listener) {
         if (mListeners.contains(listener)) return;
         mListeners.add(listener);
     }
 
-    public void removeEventListener(@NonNull PeriheralStateListener listener) {
+    public void removeEventListener(@NonNull PeripheralStateListener listener) {
         mListeners.remove(listener);
     }
 
@@ -291,7 +289,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     }
 
     private void dispatchState(@NonNull PeripheralState event, Object obj) {
-        ArrayList<PeriheralStateListener> deadListeners = new ArrayList<>();
+        ArrayList<PeripheralStateListener> deadListeners = new ArrayList<>();
         mListeners.forEach(listener -> {
             try {
                 listener.onStateChanged(event, obj);
@@ -306,7 +304,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     }
 
     private void dispatchErrorState(PeripheralErrorState errorState) {
-        ArrayList<PeriheralStateListener> deadListeners = new ArrayList<>();
+        ArrayList<PeripheralStateListener> deadListeners = new ArrayList<>();
         mListeners.forEach(listener -> {
             try {
                 listener.onError(errorState);
@@ -327,7 +325,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         if (Objects.nonNull(mRxFrameListener)) {
             mRxFrameListener.onFrame(offset, data, null);
         }
-        ArrayList<PeriheralStateListener> deadListeners = new ArrayList<>();
+        ArrayList<PeripheralStateListener> deadListeners = new ArrayList<>();
         mListeners.forEach(listener -> {
             try {
                 listener.onMessage(offset, data);
@@ -344,14 +342,14 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     public static class Builder {
         private Context context;
         private PeripheralConfiguration configuration;
-        private PeriheralStateListener listener;
+        private PeripheralStateListener listener;
 
         public  Builder(@NonNull Context ctx, @NonNull PeripheralConfiguration configuration) {
             context = ctx;
             this.configuration = configuration;
         }
 
-        public Builder setEventListener(@Nullable PeriheralStateListener listener) {
+        public Builder setEventListener(@Nullable PeripheralStateListener listener) {
             this.listener = listener;
             return this;
         }
