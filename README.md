@@ -93,13 +93,6 @@ protected void onCreate(Bundle savedInstanceState) {
 mPeripheral.enable();    /* Wait for central device */
 ```
 
-第三步：发消息
-```java
-if(connected) {
-    mConnectedDevices.forEach(address -> mPeripheral.send(address, "hello".getBytes(StandardCharsets.UTF_8)));
-}
-```
-
 **B端作为中心设备**
 
 第一步：初始化
@@ -165,7 +158,14 @@ ScanFilter scanFilter = new ScanFilter.Builder()
 mCentral.scanWithDuration(1000 * 10, callback, scanFilter);
 ```
 
-第三步：发消息
+**收发数据**
+
+接收数据：
+
+> 通过回调中的`onMessage(int offset, byte[] data)`接口完成。
+
+发送数据：
+
 ```java
 if(connected) {
     mConnectedDevices.forEach(address -> mCentral.send(address, "hello".getBytes(StandardCharsets.UTF_8)));
