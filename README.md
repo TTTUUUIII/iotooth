@@ -1,6 +1,7 @@
 # IO TOOTH
 
-### 1. 关于
+## 1. 关于
+
 这是一个简易的低功耗蓝牙收发库，目前包含以下组件：
 
 > `IoToothCentral`对应蓝牙中心设备;
@@ -9,7 +10,42 @@
 >
 > `TransmitterController`传输控制，目前仅支持简单的文本传输。
 
-### 2. 快速开始
+## 2. 快速开始
+
+### 2.1 申请权限
+```xml
+<uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+<uses-permission android:name="android.permission.BLUETOOTH" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+```
+注意部分权限需要您[动态申请](https://developer.android.google.cn/training/permissions/requesting)。
+
+### 2.2 声明依赖
+
+`build.gradle[project]`
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+`build.gradle[module]`
+
+```groovy
+dependencies {
+    implementation 'com.github.TTTUUUIII:iotooth-for-android:v1.0.0'
+}
+```
+
+### 2.3 使用
+
 **A端作为蓝牙外设**
 
 第一步：初始化
@@ -136,7 +172,7 @@ if(connected) {
 }
 ```
 
-### 3. 使用`TransmitterController`收发消息
+### 2.4 使用`TransmitterController`收发消息
 如果直接使用IoToothCentral或IoToothPeripheral收发消息，默认情况下单次仅能传输20bytes的内容，使用`TransmitterController`则无此限制：
 ```java
 TransmitterController controller = TransmitterController.create(mPeripheral /*Or mCentral*/, new TransmitterController.TransmitterCallback() {
@@ -156,7 +192,7 @@ mConnectedDevices.forEach(address -> {
 });
 ```
 
-### 4. 接口说明
+## 4. 接口说明
 
 **`IoToothCentral`**
 
