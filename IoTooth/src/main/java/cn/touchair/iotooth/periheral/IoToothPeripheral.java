@@ -243,7 +243,14 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
             mGattServer = mBluetoothManager.openGattServer(mContext, mGattServerCallback);
         }
         mGattServer.clearServices();
-        BluetoothGattService gattService = new BluetoothGattService(mConfiguration.serviceUuid, BluetoothGattService.SERVICE_TYPE_PRIMARY);
+        if (mCurrentAdvertiseData != null) {
+            mCurrentAdvertiseData.getServiceUuids().forEach(this::addGattService);
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void addGattService(ParcelUuid serviceUuid) {
+        BluetoothGattService gattService = new BluetoothGattService(serviceUuid.getUuid(), BluetoothGattService.SERVICE_TYPE_PRIMARY);
         mReadonlyCharacteristic = new BluetoothGattCharacteristic(mConfiguration.readonlyUuid,
                 BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                 BluetoothGattCharacteristic.PERMISSION_READ);
