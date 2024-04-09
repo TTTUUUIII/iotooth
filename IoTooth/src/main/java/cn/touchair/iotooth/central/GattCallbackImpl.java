@@ -34,7 +34,6 @@ public class GattCallbackImpl extends BluetoothGattCallback {
     private static final String TAG = GattCallbackImpl.class.getSimpleName();
 
     private final byte[] mLock = new byte[0];
-    private final CentralConfiguration mConfiguration;
     private BluetoothGatt mBluetoothGatt;
     private BluetoothGattCharacteristic mReadonlyCharacteristic;
     private BluetoothGattCharacteristic mWritableCharacteristic;
@@ -42,13 +41,13 @@ public class GattCallbackImpl extends BluetoothGattCallback {
 
     private boolean mExecWriting = false;
     private volatile boolean mIsConnected = false;
-
+    private final String mGattServiceUuid;
     private final ConcurrentLinkedQueue<byte[]> mTxWaitQueue = new ConcurrentLinkedQueue<>();
     private final Logger mLogger = Logger.getLogger(GattCallbackImpl.class);
 
-    public GattCallbackImpl(@NonNull CentralConfiguration configuration, @NonNull CentralStateListener listener) {
-        mConfiguration = configuration;
+    public GattCallbackImpl(@NonNull String gattServiceUuid, @NonNull CentralStateListener listener) {
         mListener = listener;
+        mGattServiceUuid = gattServiceUuid;
     }
 
     @SuppressLint("MissingPermission")
@@ -88,13 +87,13 @@ public class GattCallbackImpl extends BluetoothGattCallback {
                     .collect(Collectors.toSet());
             mLogger.debug("SERVICE_LIST", services);
         }
-        BluetoothGattService service = gatt.getService(mConfiguration.serviceUuid);
+        BluetoothGattService service = gatt.getService(UUID.fromString(mGattServiceUuid));
         if (service == null) {
-            Log.e(TAG, "Service " + mConfiguration.serviceUuid + " not found!");
+            Log.e(TAG, "Service " + mGattServiceUuid + " not found!");
             close();
             return;
         }
-        mReadonlyCharacteristic = service.getCharacteristic(mConfiguration.readonlyUuid);
+        mReadonlyCharacteristic = service.getCharacteristic(ToothConfiguration.readonlyUuid);
         mBluetoothGatt.setCharacteristicNotification(mReadonlyCharacteristic, true);
         if (mReadonlyCharacteristic != null) {
             if (GlobalConfig.DEBUG) {
@@ -113,11 +112,11 @@ public class GattCallbackImpl extends BluetoothGattCallback {
                 Log.w(TAG, "Not found readonly characteristic's descriptor!");
             }
         } else {
-            Log.d(TAG, "Readonly characteristic " + mConfiguration.readonlyUuid + " not found!");
+            Log.d(TAG, "Readonly characteristic " + ToothConfiguration.readonlyUuid + " not found!");
         }
-        mWritableCharacteristic = service.getCharacteristic(mConfiguration.writableUuid);
+        mWritableCharacteristic = service.getCharacteristic(ToothConfiguration.writableUuid);
         if (mWritableCharacteristic == null) {
-            Log.w(TAG, "Writable characteristic " + mConfiguration.writableUuid + " not found!");
+            Log.w(TAG, "Writable characteristic " + ToothConfiguration.writableUuid + " not found!");
         }
 
         if (mWritableCharacteristic != null && mReadonlyCharacteristic != null) {

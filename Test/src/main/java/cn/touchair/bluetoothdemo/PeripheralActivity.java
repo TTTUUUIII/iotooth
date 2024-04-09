@@ -10,10 +10,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.le.AdvertiseData;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.ParcelUuid;
 import android.util.ArraySet;
 import android.view.View;
 
@@ -22,7 +24,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityPeripheralBinding;
-import cn.touchair.iotooth.configuration.PeripheralConfiguration;
+import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.periheral.IoToothPeripheral;
 import cn.touchair.iotooth.periheral.PeripheralStateListener;
 import cn.touchair.iotooth.periheral.PeripheralErrorState;
@@ -40,6 +42,9 @@ public class PeripheralActivity extends AppCompatActivity implements PeripheralS
     private final Set<String> mConnectedDevices = new ArraySet<>();
     private boolean isEnable = false;
     private final Handler mH = new Handler(Looper.getMainLooper());
+    private final AdvertiseData mAdvertiseData = new AdvertiseData.Builder()
+            .addServiceUuid(ParcelUuid.fromString(GlobalConfig.GATT_SERVICE_UUID))
+            .build();
     @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +53,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeripheralS
         TempState.defaultButtonBackgroundTintList = binding.tggleBtn.getBackgroundTintList();
         setContentView(binding.getRoot());
         binding.mainLayout.messageEditText.setText("I'm David!");
-        mPeripheral = new IoToothPeripheral.Builder(this, new PeripheralConfiguration("1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf"))
+        mPeripheral = new IoToothPeripheral.Builder(this)
                 .setEventListener(this)
                 .build();
         mController = TransmitterController.create(mPeripheral, this);
@@ -61,7 +66,7 @@ public class PeripheralActivity extends AppCompatActivity implements PeripheralS
         if (id == R.id.tggle_btn) {
             isEnable = !isEnable;
             if (isEnable) {
-                mPeripheral.enable();
+                mPeripheral.enable(mAdvertiseData);
             } else {
                 mPeripheral.disable();
             }

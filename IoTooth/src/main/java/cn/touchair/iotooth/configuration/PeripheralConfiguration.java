@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 
 import java.util.UUID;
 
+@Deprecated
 public class PeripheralConfiguration extends ToothConfiguration {
 
     public String serviceLocalName = Build.PRODUCT;

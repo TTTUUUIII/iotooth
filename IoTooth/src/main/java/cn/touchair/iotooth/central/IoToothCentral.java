@@ -20,6 +20,7 @@ import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.ParcelUuid;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -50,6 +51,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     private final BluetoothLeScanner mLeScanner;
     private ScanResultCallback mScanCallback;
     private RxFrameListener mRxFrameListener;
+    private String mServiceUuid;
 
     private final Handler mH = new Handler(Objects.requireNonNull(Looper.myLooper())) {
         @Override
@@ -98,19 +100,18 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         openGatt(remote);
     }
 
-    public void scanWithDuration(long mills, ScanResultCallback callback) {
-        scanWithDuration(mills, callback, null);
-    }
-
-    public void scanWithDuration(long mills, ScanResultCallback callback, ScanFilter filter) {
+    public void scanWithDuration(long mills, @NonNull ScanResultCallback callback, @NonNull String serviceUuid) {
         mScanCallback = callback;
-        scanService(filter);
+        mServiceUuid = serviceUuid;
+        scanService(new ScanFilter.Builder()
+                .setServiceUuid(ParcelUuid.fromString(serviceUuid))
+                .build());
         mH.sendEmptyMessageDelayed(MSG_WHAT_STOP_SCAN,
                 mills);
     }
 
     @TestOnly
-    public void scanNeverStop( ScanResultCallback callback, ScanFilter filter) {
+    public void scan( ScanResultCallback callback, ScanFilter filter) {
         mScanCallback = callback;
         scanService(filter);
     }
@@ -205,7 +206,7 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
 
     @SuppressLint("MissingPermission")
     private void openGatt(@NonNull BluetoothDevice device) {
-        GattCallbackImpl handler = new GattCallbackImpl(mConfiguration, this);
+        GattCallbackImpl handler = new GattCallbackImpl(mServiceUuid, this);
         BluetoothGatt gatt = device.connectGatt(mContext, false, handler);
         if (gatt != null) {
             if (GlobalConfig.DEBUG) {

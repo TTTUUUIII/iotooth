@@ -27,6 +27,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,17 +37,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import cn.touchair.iotooth.GlobalConfig;
-import cn.touchair.iotooth.configuration.PeripheralConfiguration;
 import cn.touchair.iotooth.configuration.ToothConfiguration;
 import cn.touchair.iotooth.util.RxFrameListener;
 import cn.touchair.iotooth.util.TransmitterAble;
+import kotlin.text.Charsets;
 
 public class IoToothPeripheral extends AdvertiseCallback implements TransmitterAble {
     private static final String TAG = IoToothPeripheral.class.getSimpleName();
     private final Context mContext;
     private final BluetoothAdapter mAdapter;
     private final List<PeripheralStateListener> mListeners = new CopyOnWriteArrayList<>();
-    private final PeripheralConfiguration mConfiguration;
     private final BluetoothManager mBluetoothManager;
     private BluetoothGattServer mGattServer;
     private BluetoothGattCharacteristic mReadonlyCharacteristic;
@@ -141,15 +141,13 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     };
 
     @SuppressLint("MissingPermission")
-    private   IoToothPeripheral(@NonNull Context ctx, @Nullable PeripheralStateListener listener, @NonNull PeripheralConfiguration configuration) {
+    private   IoToothPeripheral(@NonNull Context ctx, @Nullable PeripheralStateListener listener) {
         Objects.requireNonNull(ctx);
-        Objects.requireNonNull(configuration);
         mContext = ctx;
         mBluetoothManager = (BluetoothManager) ctx.getSystemService(Context.BLUETOOTH_SERVICE);
         if (Objects.nonNull(listener)) {
             mListeners.add(listener);
         }
-        mConfiguration = configuration;
         mAdapter = mBluetoothManager.getAdapter();
         if (!mAdapter.isEnabled() && !mAdapter.enable()) {
             Log.d(TAG, "Bluetooth not enable.");
@@ -166,18 +164,12 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     }
 
     private AdvertiseData mCurrentAdvertiseData;
-    @SuppressLint("MissingPermission")
-    public void enable() {
-        enable(null);
-    }
+//    @SuppressLint("MissingPermission")
+//    public void enable() {
+//        enable(null);
+//    }
 
     public void enable(@Nullable AdvertiseData advertiseData) {
-        if (advertiseData == null) {
-            advertiseData = new AdvertiseData.Builder()
-                    .addServiceUuid(new ParcelUuid(mConfiguration.serviceUuid))
-                    .setIncludeDeviceName(false)
-                    .build();
-        }
         startAdverting(advertiseData);
         mCurrentAdvertiseData = advertiseData;
     }
@@ -228,6 +220,10 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         }
     }
 
+    public void send(@Nullable String address, String msg) {
+        send(address, msg.getBytes(Charsets.UTF_8));
+    }
+
     @Override
     public void setRxFrameListener(@Nullable RxFrameListener listener) {
         mRxFrameListener = listener;
@@ -238,7 +234,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     public void onStartSuccess(AdvertiseSettings settingsInEffect) {
         super.onStartSuccess(settingsInEffect);
         mIsAdverting = true;
-        dispatchState(PeripheralState.ADVERTISING, mAdapter.getAddress());
+        dispatchState(PeripheralState.ADVERTISING, "Nana");
         if (Objects.isNull(mGattServer)) {
             mGattServer = mBluetoothManager.openGattServer(mContext, mGattServerCallback);
         }
@@ -251,11 +247,11 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
     @SuppressLint("MissingPermission")
     private void addGattService(ParcelUuid serviceUuid) {
         BluetoothGattService gattService = new BluetoothGattService(serviceUuid.getUuid(), BluetoothGattService.SERVICE_TYPE_PRIMARY);
-        mReadonlyCharacteristic = new BluetoothGattCharacteristic(mConfiguration.readonlyUuid,
+        mReadonlyCharacteristic = new BluetoothGattCharacteristic(ToothConfiguration.readonlyUuid,
                 BluetoothGattCharacteristic.PROPERTY_READ | BluetoothGattCharacteristic.PROPERTY_NOTIFY,
                 BluetoothGattCharacteristic.PERMISSION_READ);
         mReadonlyCharacteristic.addDescriptor(ToothConfiguration.getClientCharacteristicConfigurationDescriptor());
-        mWritableCharacteristic = new BluetoothGattCharacteristic(mConfiguration.writableUuid,
+        mWritableCharacteristic = new BluetoothGattCharacteristic(ToothConfiguration.writableUuid,
                 BluetoothGattCharacteristic.PROPERTY_WRITE,
                 BluetoothGattCharacteristic.PERMISSION_WRITE);
         gattService.addCharacteristic(mReadonlyCharacteristic);
@@ -281,9 +277,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
                 deadListeners.add(listener);
             }
         });
-        deadListeners.forEach(deadListener -> {
-            mListeners.remove(deadListener);
-        });
+        deadListeners.forEach(mListeners::remove);
     }
 
     private void dispatchErrorState(PeripheralErrorState errorState) {
@@ -317,19 +311,17 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
                 deadListeners.add(listener);
             }
         });
-        deadListeners.forEach(deadListener -> {
-            mListeners.remove(deadListener);
-        });
+        deadListeners.forEach(mListeners::remove);
     }
 
     public static class Builder {
         private Context context;
-        private PeripheralConfiguration configuration;
+//        private PeripheralConfiguration configuration;
         private PeripheralStateListener listener;
 
-        public  Builder(@NonNull Context ctx, @NonNull PeripheralConfiguration configuration) {
+        public  Builder(@NonNull Context ctx) {
             context = ctx;
-            this.configuration = configuration;
+//            this.configuration = configuration;
         }
 
         public Builder setEventListener(@Nullable PeripheralStateListener listener) {
@@ -338,7 +330,7 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
         }
 
         public IoToothPeripheral build() {
-            return new IoToothPeripheral(context, listener, configuration);
+            return new IoToothPeripheral(context, listener);
         }
     }
 

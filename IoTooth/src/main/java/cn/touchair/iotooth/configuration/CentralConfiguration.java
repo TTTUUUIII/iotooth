@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 
 import java.util.UUID;
 
+@Deprecated
 public class CentralConfiguration extends ToothConfiguration {
     public CentralConfiguration(@NonNull String serviceUuid) {
         this(UUID.fromString(serviceUuid));

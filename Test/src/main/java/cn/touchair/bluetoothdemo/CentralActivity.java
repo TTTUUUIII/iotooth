@@ -20,6 +20,7 @@ import java.util.Objects;
 
 import cn.touchair.bluetoothdemo.databinding.ActivityCentralBinding;
 import cn.touchair.bluetoothdemo.fragment.FindRemoteFragment;
+import cn.touchair.iotooth.GlobalConfig;
 import cn.touchair.iotooth.central.CentralErrorState;
 import cn.touchair.iotooth.central.CentralState;
 import cn.touchair.iotooth.central.CentralStateListener;
@@ -95,7 +96,7 @@ public class CentralActivity extends AppCompatActivity implements  CentralStateL
 
     public void startScan(@NonNull ScanResultCallback callback) {
 //        mCentral.scanWithDuration(1000 * 10, callback, new ScanFilter.Builder().setDeviceName("TOOTH").build());
-        mCentral.scanWithDuration(1000 * 10, callback, new ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString("1b3f1e30-0f15-4f98-8d69-d2b97f4ceddf")).build());
+        mCentral.scanWithDuration(1000 * 10, callback, GlobalConfig.GATT_SERVICE_UUID);
     }
 
     public TransmitterAble getTransmitterCore() {
