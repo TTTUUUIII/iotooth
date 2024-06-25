@@ -31,8 +31,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -52,7 +52,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.github.TTTUUUIII'
                 artifactId = 'iotooth-for-android'
-                version = '1.0.0'
+                version = '1.1.1'
             }
         }
     }
