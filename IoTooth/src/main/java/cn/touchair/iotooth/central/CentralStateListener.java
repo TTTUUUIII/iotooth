@@ -11,5 +11,7 @@ public interface CentralStateListener {
     void onStateChanged(CentralState state, @NonNull String address);
     void  onMessage(int offset, byte[] data, @NonNull String address);
 
+    void onMtuChanged(int mtu);
+
     void onError(CentralErrorState errorState);
 }

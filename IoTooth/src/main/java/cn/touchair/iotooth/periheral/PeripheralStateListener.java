@@ -9,5 +9,7 @@ public interface PeripheralStateListener {
     void onStateChanged(PeripheralState state, Object obj);
     void  onMessage(int offset, byte[] data);
 
+    void onMtuChanged(int mtu);
+
     void onError(PeripheralErrorState errorState);
 }

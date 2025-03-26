@@ -94,6 +94,12 @@ public class IoToothPeripheral extends AdvertiseCallback implements TransmitterA
             mGattServer.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, characteristic.getValue());
         }
 
+        @Override
+        public void onMtuChanged(BluetoothDevice device, int mtu) {
+            super.onMtuChanged(device, mtu);
+            mListeners.forEach(peripheralStateListener -> peripheralStateListener.onMtuChanged(mtu));
+        }
+
         @SuppressLint("MissingPermission")
         @Override
         public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {

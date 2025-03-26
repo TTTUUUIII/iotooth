@@ -88,6 +88,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
             mLogger.debug("SERVICE_LIST", services);
         }
         BluetoothGattService service = gatt.getService(UUID.fromString(mGattServiceUuid));
+        Log.d(TAG, "ssssssss :l");
         if (service == null) {
             Log.e(TAG, "Service " + mGattServiceUuid + " not found!");
             close();
@@ -118,16 +119,30 @@ public class GattCallbackImpl extends BluetoothGattCallback {
         if (mWritableCharacteristic == null) {
             Log.w(TAG, "Writable characteristic " + ToothConfiguration.writableUuid + " not found!");
         }
-
+        Log.d(TAG, "ssssssss :a");
         if (mWritableCharacteristic != null && mReadonlyCharacteristic != null) {
+            Log.d(TAG, "ssssssss :c");
             handleState(CentralState.CONNECTED, gatt.getDevice().getAddress());
+        } else {
+            Log.d(TAG, "ssssssss :d");
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    public void requestMtu(int mtu) {
+        mBluetoothGatt.requestMtu(mtu);
     }
 
     @Override
     public void onCharacteristicRead(@NonNull BluetoothGatt gatt, @NonNull BluetoothGattCharacteristic characteristic, @NonNull byte[] value, int status) {
         super.onCharacteristicRead(gatt, characteristic, value, status);
         Log.d(TAG, "onCharacteristicRead");
+    }
+
+    @Override
+    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+        super.onMtuChanged(gatt, mtu, status);
+        mListener.onMtuChanged(mtu);
     }
 
     @Override

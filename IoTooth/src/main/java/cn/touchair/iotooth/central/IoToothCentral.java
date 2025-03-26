@@ -100,20 +100,26 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
         openGatt(remote);
     }
 
+    public void requestMtu(String addr, int mtu) {
+        GattCallbackImpl handler = mGattHandlersMap.get(addr);
+        if (handler != null) {
+            handler.requestMtu(mtu);
+        }
+    }
+
     public void scanWithDuration(long mills, @NonNull ScanResultCallback callback, @NonNull String serviceUuid) {
-        mScanCallback = callback;
-        mServiceUuid = serviceUuid;
-        scanService(new ScanFilter.Builder()
-                .setServiceUuid(ParcelUuid.fromString(serviceUuid))
-                .build());
+        scan(callback, serviceUuid);
         mH.sendEmptyMessageDelayed(MSG_WHAT_STOP_SCAN,
                 mills);
     }
 
     @TestOnly
-    public void scan( ScanResultCallback callback, ScanFilter filter) {
+    public void scan( ScanResultCallback callback, @NonNull String serviceUUid) {
         mScanCallback = callback;
-        scanService(filter);
+        mServiceUuid = serviceUUid;
+        scanService(new ScanFilter.Builder()
+                .setServiceUuid(ParcelUuid.fromString(serviceUUid))
+                .build());
     }
 
     public void stopScan() {
@@ -245,6 +251,11 @@ public class IoToothCentral extends ScanCallback implements CentralStateListener
     @Override
     public void onMessage(int offset, byte[] data, @NonNull String address) {
         dispatchMessage(offset, data, address);
+    }
+
+    @Override
+    public void onMtuChanged(int mtu) {
+        mListeners.forEach(centralStateListener -> centralStateListener.onMtuChanged(mtu));
     }
 
     @Override
