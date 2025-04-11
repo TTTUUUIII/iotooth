@@ -63,6 +63,7 @@ public class GattCallbackImpl extends BluetoothGattCallback {
                 mIsConnected = true;
                 mBluetoothGatt = gatt;
                 gatt.discoverServices();
+                gatt.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_BALANCED);
                 break;
             case BluetoothGatt.STATE_CONNECTING:
                 break;
